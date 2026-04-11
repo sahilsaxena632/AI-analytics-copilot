@@ -16,8 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/connect-database", label: "Connect database", icon: Unplug },
+  { href: "/app/home", label: "Home", icon: Home },
+  { href: "/onboarding/connect-database", label: "Connect database", icon: Unplug },
   { href: "/ask", label: "Ask query", icon: MessageSquareText },
   { href: "/queries", label: "Saved queries", icon: Bookmark },
   { href: "/schema", label: "Schema", icon: Table2 },
@@ -40,7 +40,8 @@ export function Sidebar() {
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {links.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+          const active =
+            pathname === href || (href !== "/app/home" && href !== "/" && pathname.startsWith(href));
           return (
             <Link
               key={href}

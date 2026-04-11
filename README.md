@@ -68,12 +68,13 @@ Monorepo for a manager-facing analytics copilot: **Next.js 15** (App Router) + *
    - Web: [http://localhost:3000](http://localhost:3000)
    - API: [http://localhost:4000](http://localhost:4000)
 
-7. **Sign in** at `/login` with the seeded user, then use **Ask query** (`/ask`) for the minimal E2E path: connect → refresh schema → ask (placeholder SQL) → run → save query → save dashboard card.
+7. **Sign in** at `/login` with the seeded user, open **Connect PostgreSQL** at `/onboarding/connect-database`, then continue from **Home** (`/app/home`) — e.g. **Ask query** (`/ask`): schema → ask (placeholder SQL) → run → save query → save dashboard card.
 
 ## API modules (backend)
 
 - **Auth** — `POST /auth/register`, `POST /auth/login` (JWT bearer for all other routes)
-- **Connections** — CRUD-style listing and `POST /connections` to store a Postgres connection string (encrypt at rest: **TODO**)
+- **Database connections** — `GET/POST /database-connections`, `GET /database-connections/:id`, `POST /database-connections/:id/test`. `POST` body includes `type`: `postgres` \| `mysql` plus host/port/database/username/password/ssl; set `dryRun: true` to test only (no save). Runtime access uses **`DatabaseAdapterFactory`** + per-dialect adapters (`PostgresAdapter`, `MysqlAdapter`) — add engines by extending `ExternalDbProvider` in Prisma and registering a new adapter class.
+- **Connections (legacy)** — `GET/POST /connections` with a single `connectionString` (still supported for seeds / older clients)
 - **Schema** — `POST /schema/connections/:id/refresh`, `GET .../latest` (cached `DatabaseSchema` rows)
 - **Query** — `POST /query/ask` (placeholder until LLM), `POST /query/execute` (read-only, org-scoped), `GET /query/runs`
 - **Saved queries** — `POST/GET /saved-queries`, `GET /saved-queries/:id`
@@ -83,7 +84,7 @@ Monorepo for a manager-facing analytics copilot: **Next.js 15** (App Router) + *
 ## Security notes (MVP)
 
 - Query execution wraps user SQL as `SELECT * FROM (<user sql>) AS _q LIMIT 501` and rejects non–`SELECT`/`WITH` statements via `assertReadOnlySql` in `@analytics-copilot/shared`. **This is not a substitute for a full SQL parser** — see TODO in shared package.
-- Connection strings are stored in plaintext in the app DB for the MVP (**TODO**: KMS / vault).
+- External DB passwords are stored in plaintext in the `DatabaseConnection.password` column for the MVP; adapters build driver config internally (**TODO**: KMS / vault). Legacy PostgreSQL `connectionString`-only rows remain supported (`databaseType` defaults to `postgres`).
 - JWT is stored in `localStorage` on the web app (**TODO**: httpOnly cookies + CSRF strategy).
 
 ## Redis

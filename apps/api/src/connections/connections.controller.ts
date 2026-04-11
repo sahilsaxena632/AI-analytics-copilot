@@ -20,6 +20,7 @@ export class ConnectionsController {
     return {
       id: c.id,
       name: c.name,
+      type: c.databaseType,
       isActive: c.isActive,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,

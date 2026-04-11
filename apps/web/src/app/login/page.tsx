@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/form-field";
 
-export default function LoginPage() {
+function safeNextPath(raw: string | null): string {
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) {
+    return raw;
+  }
+  return "/app/home";
+}
+
+function LoginForm() {
   const { setSession, token } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get("next"));
+
   const [email, setEmail] = useState("demo@example.com");
   const [password, setPassword] = useState("demo123");
   const [error, setError] = useState<string | null>(null);
@@ -19,9 +29,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (token) {
-      router.replace("/");
+      router.replace(next);
     }
-  }, [token, router]);
+  }, [token, router, next]);
 
   if (token) {
     return (
@@ -44,7 +54,7 @@ export default function LoginPage() {
         },
       );
       setSession(res.accessToken, res.user);
-      router.replace("/");
+      router.replace(next);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Login failed");
     } finally {
@@ -85,11 +95,21 @@ export default function LoginPage() {
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-xs text-muted">
-            Demo: demo@example.com / demo123 (after seed)
-          </p>
+          <p className="mt-4 text-center text-xs text-muted">Demo: demo@example.com / demo123 (after seed)</p>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-muted text-sm">Loading…</div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

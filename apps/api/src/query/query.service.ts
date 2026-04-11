@@ -1,25 +1,27 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { assertReadOnlySql, type AskQuestionResponseDto, type QueryExecuteResultDto } from "@analytics-copilot/shared";
+import { type AskQuestionResponseDto, type QueryExecuteResultDto } from "@analytics-copilot/shared";
 import { AuditAction } from "@prisma/client";
-import { Client } from "pg";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { ConnectionsService } from "../connections/connections.service";
-
-const MAX_ROWS = 500;
+import { ConnectionAdapterResolver } from "../database/connection-adapter.resolver";
 
 @Injectable()
 export class QueryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly connections: ConnectionsService,
+    private readonly adapterResolver: ConnectionAdapterResolver,
     private readonly audit: AuditService,
   ) {}
 
   async askQuestion(organizationId: string, connectionId: string, question: string): Promise<AskQuestionResponseDto> {
     await this.connections.getById(connectionId, organizationId);
-    // Avoid embedding free-form text in SQL comments — assertReadOnlySql scans the full string and could match keywords.
-    const generatedSql = `SELECT current_database() AS database, now() AS server_time;`;
+    const adapter = await this.adapterResolver.resolveActive(connectionId, organizationId);
+    const generatedSql =
+      adapter.dialect === "mysql"
+        ? `SELECT DATABASE() AS \`database\`, NOW() AS server_time;`
+        : `SELECT current_database() AS database, now() AS server_time;`;
     return {
       generatedSql,
       explanation: `Placeholder (LLM TODO). Your question was: "${question.slice(0, 400)}"`,
@@ -33,13 +35,7 @@ export class QueryService {
     sql: string,
     savedQueryId?: string | null,
   ): Promise<QueryExecuteResultDto> {
-    let normalized = sql.trim();
-    try {
-      assertReadOnlySql(normalized);
-    } catch (e) {
-      throw new BadRequestException(e instanceof Error ? e.message : "Invalid SQL");
-    }
-    normalized = normalized.replace(/;+\s*$/g, "").trim();
+    let normalized = sql.trim().replace(/;+\s*$/g, "").trim();
 
     if (savedQueryId) {
       const saved = await this.prisma.savedQuery.findFirst({
@@ -50,19 +46,10 @@ export class QueryService {
       }
     }
 
-    const connStr = await this.connections.getConnectionStringForExecution(connectionId, organizationId);
-    const client = new Client({
-      connectionString: connStr,
-      statement_timeout: 60_000,
-    });
+    const adapter = await this.adapterResolver.resolveActive(connectionId, organizationId);
     const started = Date.now();
-    await client.connect();
     try {
-      const wrapped = `SELECT * FROM (${normalized}) AS _q LIMIT ${MAX_ROWS + 1}`;
-      const res = await client.query(wrapped);
-      const truncated = res.rowCount != null && res.rowCount > MAX_ROWS;
-      const rows = res.rows.slice(0, MAX_ROWS).map((r) => ({ ...r }));
-      const columns = res.fields.map((f) => f.name);
+      const { columns, rows, rowCount, truncated } = await adapter.executeQuery(normalized);
       const durationMs = Date.now() - started;
 
       await this.prisma.queryRun.create({
@@ -81,18 +68,24 @@ export class QueryService {
         userId,
         action: AuditAction.QUERY_EXECUTED,
         resourceType: "QueryRun",
-        metadata: { connectionId, rowCount: rows.length, truncated },
+        metadata: { connectionId, rowCount: rows.length, truncated, dialect: adapter.dialect },
       });
 
       return {
         columns,
         rows,
-        rowCount: rows.length,
+        rowCount,
         truncated,
       };
     } catch (err) {
       const durationMs = Date.now() - started;
-      const message = err instanceof Error ? err.message : "Query failed";
+      let message = "Query failed";
+      if (err instanceof BadRequestException) {
+        const body = err.getResponse();
+        message = typeof body === "string" ? body : err.message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       await this.prisma.queryRun.create({
         data: {
           connectionId,
@@ -103,9 +96,10 @@ export class QueryService {
           durationMs,
         },
       });
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
       throw new BadRequestException(message);
-    } finally {
-      await client.end().catch(() => undefined);
     }
   }
 

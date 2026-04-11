@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { validateEnv } from "./config/env.validation";
 import { PrismaModule } from "./prisma/prisma.module";
+import { DatabaseModule } from "./database/database.module";
 import { AuthModule } from "./auth/auth.module";
 import { ConnectionsModule } from "./connections/connections.module";
 import { SchemaModule } from "./schema/schema.module";
@@ -17,6 +18,7 @@ import { AuditModule } from "./audit/audit.module";
       validate: validateEnv,
     }),
     PrismaModule,
+    DatabaseModule,
     AuditModule,
     AuthModule,
     ConnectionsModule,

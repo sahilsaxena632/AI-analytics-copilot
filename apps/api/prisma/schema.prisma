@@ -16,6 +16,12 @@ enum AuditAction {
   DASHBOARD_CARD_CREATED
 }
 
+/// External analytics DB (not the app Prisma DB). Extend enum + add adapter when supporting new engines.
+enum ExternalDbProvider {
+  postgres
+  mysql
+}
+
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -47,8 +53,16 @@ model DatabaseConnection {
   organizationId   String
   organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name             String
-  /// TODO: Encrypt at rest (KMS / vault); MVP stores plaintext connection string.
-  connectionString String
+  databaseType     ExternalDbProvider @default(postgres)
+  /// Legacy URI form (seed / old API). Prefer structured fields + `password`; execution uses builder when set.
+  connectionString String   @default("")
+  host             String?
+  port             Int?
+  databaseName     String?
+  username         String?
+  /// MVP plaintext; replace via `ConnectionCredentialsStore` pattern — never expose in API responses or logs.
+  password         String?
+  ssl              Boolean  @default(false)
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

@@ -37,7 +37,7 @@ export default function AskPage() {
     if (!token) {
       return;
     }
-    const rows = await apiFetch<Connection[]>("/connections", { token });
+    const rows = await apiFetch<Connection[]>("/database-connections", { token });
     setConnections(rows);
     setConnectionId((prev) => prev || rows[0]?.id || "");
   }, [token]);

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common";
-import { AuditAction } from "@prisma/client";
+import { AuditAction, ExternalDbProvider } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { CreateConnectionDto } from "./dto/create-connection.dto";
@@ -17,6 +17,7 @@ export class ConnectionsService {
       select: {
         id: true,
         name: true,
+        databaseType: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -40,6 +41,7 @@ export class ConnectionsService {
       data: {
         organizationId,
         name: dto.name,
+        databaseType: ExternalDbProvider.postgres,
         connectionString: dto.connectionString,
         isActive: dto.isActive ?? true,
       },
@@ -58,17 +60,6 @@ export class ConnectionsService {
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
     };
-  }
-
-  /** Returns decrypted connection string for internal use only. */
-  async getConnectionStringForExecution(id: string, organizationId: string) {
-    const conn = await this.prisma.databaseConnection.findFirst({
-      where: { id, organizationId, isActive: true },
-    });
-    if (!conn) {
-      throw new NotFoundException("Connection not found or inactive");
-    }
-    return conn.connectionString;
   }
 
   assertOrg(connOrgId: string, userOrgId: string) {

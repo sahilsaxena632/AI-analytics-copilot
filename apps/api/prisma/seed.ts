@@ -1,4 +1,4 @@
-import { PrismaClient, AuditAction } from "@prisma/client";
+import { PrismaClient, AuditAction, ExternalDbProvider } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
@@ -28,11 +28,12 @@ async function main() {
 
   const conn = await prisma.databaseConnection.upsert({
     where: { id: "seed-conn-local-app-db" },
-    update: {},
+    update: { databaseType: ExternalDbProvider.postgres },
     create: {
       id: "seed-conn-local-app-db",
       organizationId: org.id,
       name: "Local app PostgreSQL (Docker)",
+      databaseType: ExternalDbProvider.postgres,
       connectionString:
         process.env.SEED_DEMO_CONNECTION_STRING ??
         "postgresql://copilot:copilot@localhost:5432/copilot_app?schema=public",
