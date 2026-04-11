@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuditAction {
+  LOGIN
+  CONNECTION_CREATED
+  SCHEMA_REFRESHED
+  QUERY_EXECUTED
+  QUERY_SAVED
+  DASHBOARD_CARD_CREATED
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  connections DatabaseConnection[]
+  savedQueries SavedQuery[]
+  dashboards  Dashboard[]
+  auditLogs   AuditLog[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model DatabaseConnection {
+  id               String   @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name             String
+  /// TODO: Encrypt at rest (KMS / vault); MVP stores plaintext connection string.
+  connectionString String
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  schemas        DatabaseSchema[]
+  savedQueries   SavedQuery[]
+  queryRuns      QueryRun[]
+  dashboardCards DashboardCard[]
+
+  @@index([organizationId])
+}
+
+model DatabaseSchema {
+  id           String   @id @default(cuid())
+  connectionId String
+  connection   DatabaseConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  fetchedAt    DateTime @default(now())
+  schemaJson   Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([connectionId])
+}
+
+model SavedQuery {
+  id                      String   @id @default(cuid())
+  organizationId          String
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connectionId            String
+  connection              DatabaseConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  title                   String
+  sqlText                 String
+  naturalLanguageQuestion String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  runs QueryRun[]
+
+  @@index([organizationId])
+  @@index([connectionId])
+}
+
+model QueryRun {
+  id           String    @id @default(cuid())
+  savedQueryId String?
+  savedQuery   SavedQuery? @relation(fields: [savedQueryId], references: [id], onDelete: SetNull)
+  connectionId String
+  connection   DatabaseConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  sqlText      String
+  rowCount     Int?
+  success      Boolean
+  errorMessage String?
+  durationMs   Int?
+  createdAt    DateTime  @default(now())
+
+  @@index([connectionId])
+}
+
+model Dashboard {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  cards DashboardCard[]
+
+  @@index([organizationId])
+}
+
+model DashboardCard {
+  id           String   @id @default(cuid())
+  dashboardId  String
+  dashboard    Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   DatabaseConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  title        String
+  chartType    String
+  sqlText      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([dashboardId])
+}
+
+model AuditLog {
+  id             String      @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action         AuditAction
+  resourceType   String?
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  @@index([organizationId])
+}
