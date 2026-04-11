@@ -26,8 +26,8 @@ export default function AppHomePage() {
           />
           <InsightCard
             title="Next"
-            description="LLM integration hooks at /query/ask"
-            value="Placeholder SQL"
+            description="Swap rule-based SQL for an LLM behind the same API"
+            value="Generator service"
           />
         </div>
         <Card>
@@ -39,7 +39,7 @@ export default function AppHomePage() {
             <Link href="/onboarding/connect-database" className={cn(buttonVariants())}>
               Connect database
             </Link>
-            <Link href="/ask" className={cn(buttonVariants({ variant: "secondary" }))}>
+            <Link href="/app/ask" className={cn(buttonVariants({ variant: "secondary" }))}>
               Open Ask query
             </Link>
           </CardContent>

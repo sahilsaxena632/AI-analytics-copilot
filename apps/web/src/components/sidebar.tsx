@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/app/home", label: "Home", icon: Home },
   { href: "/onboarding/connect-database", label: "Connect database", icon: Unplug },
-  { href: "/ask", label: "Ask query", icon: MessageSquareText },
+  { href: "/app/ask", label: "Ask query", icon: MessageSquareText },
   { href: "/queries", label: "Saved queries", icon: Bookmark },
   { href: "/app/schema", label: "Schema", icon: Table2 },
   { href: "/dashboards", label: "Dashboards", icon: LayoutDashboard },

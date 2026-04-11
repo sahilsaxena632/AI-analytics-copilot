@@ -1,7 +1,8 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsPrismaClientId } from "../../common/validators/is-prisma-client-id.decorator";
 
 export class CreateSavedQueryDto {
-  @IsUUID()
+  @IsPrismaClientId()
   connectionId!: string;
 
   @IsString()

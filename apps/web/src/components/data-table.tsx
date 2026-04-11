@@ -31,11 +31,21 @@ export function DataTable({ result }: { result: QueryExecuteResultDto | null }) 
           ))}
         </tbody>
       </table>
-      <div className="flex items-center justify-between border-t border-border bg-card/40 px-3 py-2 text-xs text-muted">
-        <span>
-          {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
-          {result.truncated ? " (truncated)" : ""}
-        </span>
+      <div className="flex flex-col gap-1 border-t border-border bg-card/40 px-3 py-2 text-xs text-muted">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span>
+            {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
+            {result.truncated ? " (truncated)" : ""}
+            {result.durationMs != null ? ` · ${result.durationMs} ms` : ""}
+          </span>
+        </div>
+        {result.warnings?.length ? (
+          <ul className="list-inside list-disc text-amber-200/90">
+            {result.warnings.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        ) : null}
       </div>
     </div>
   );

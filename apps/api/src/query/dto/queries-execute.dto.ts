@@ -1,14 +1,14 @@
 import { IsNotEmpty, IsString } from "class-validator";
 import { IsOptionalPrismaClientId, IsPrismaClientId } from "../../common/validators/is-prisma-client-id.decorator";
 
-export class ExecuteQueryDto {
+export class QueriesExecuteDto {
   @IsPrismaClientId()
-  connectionId!: string;
-
-  @IsOptionalPrismaClientId()
-  savedQueryId?: string;
+  databaseConnectionId!: string;
 
   @IsString()
   @IsNotEmpty()
   sql!: string;
+
+  @IsOptionalPrismaClientId()
+  savedQueryId?: string;
 }

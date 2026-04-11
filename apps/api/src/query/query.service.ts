@@ -1,31 +1,24 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { type AskQuestionResponseDto, type QueryExecuteResultDto } from "@analytics-copilot/shared";
-import { AuditAction } from "@prisma/client";
+import { Injectable } from "@nestjs/common";
+import type { AskQuestionResponseDto, GenerateSqlResponseDto, QueryExecuteResultDto } from "@analytics-copilot/shared";
 import { PrismaService } from "../prisma/prisma.service";
-import { AuditService } from "../audit/audit.service";
-import { ConnectionsService } from "../connections/connections.service";
-import { ConnectionAdapterResolver } from "../database/connection-adapter.resolver";
+import { SqlGenerationService } from "./sql-generation.service";
+import { QueryExecutionService } from "./query-execution.service";
 
 @Injectable()
 export class QueryService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly connections: ConnectionsService,
-    private readonly adapterResolver: ConnectionAdapterResolver,
-    private readonly audit: AuditService,
+    private readonly sqlGeneration: SqlGenerationService,
+    private readonly queryExecution: QueryExecutionService,
   ) {}
 
+  /** @deprecated Prefer POST /queries/generate-sql — kept for older clients. */
   async askQuestion(organizationId: string, connectionId: string, question: string): Promise<AskQuestionResponseDto> {
-    await this.connections.getById(connectionId, organizationId);
-    const adapter = await this.adapterResolver.resolveActive(connectionId, organizationId);
-    const generatedSql =
-      adapter.dialect === "mysql"
-        ? `SELECT DATABASE() AS \`database\`, NOW() AS server_time;`
-        : `SELECT current_database() AS database, now() AS server_time;`;
-    return {
-      generatedSql,
-      explanation: `Placeholder (LLM TODO). Your question was: "${question.slice(0, 400)}"`,
-    };
+    const res = await this.sqlGeneration.generate(organizationId, {
+      databaseConnectionId: connectionId,
+      question,
+    });
+    return mapGenerateToAsk(res);
   }
 
   async execute(
@@ -35,72 +28,7 @@ export class QueryService {
     sql: string,
     savedQueryId?: string | null,
   ): Promise<QueryExecuteResultDto> {
-    let normalized = sql.trim().replace(/;+\s*$/g, "").trim();
-
-    if (savedQueryId) {
-      const saved = await this.prisma.savedQuery.findFirst({
-        where: { id: savedQueryId, organizationId },
-      });
-      if (!saved || saved.connectionId !== connectionId) {
-        throw new BadRequestException("savedQueryId does not match connection or organization");
-      }
-    }
-
-    const adapter = await this.adapterResolver.resolveActive(connectionId, organizationId);
-    const started = Date.now();
-    try {
-      const { columns, rows, rowCount, truncated } = await adapter.executeQuery(normalized);
-      const durationMs = Date.now() - started;
-
-      await this.prisma.queryRun.create({
-        data: {
-          connectionId,
-          savedQueryId: savedQueryId || null,
-          sqlText: sql,
-          rowCount: rows.length,
-          success: true,
-          durationMs,
-        },
-      });
-
-      await this.audit.log({
-        organizationId,
-        userId,
-        action: AuditAction.QUERY_EXECUTED,
-        resourceType: "QueryRun",
-        metadata: { connectionId, rowCount: rows.length, truncated, dialect: adapter.dialect },
-      });
-
-      return {
-        columns,
-        rows,
-        rowCount,
-        truncated,
-      };
-    } catch (err) {
-      const durationMs = Date.now() - started;
-      let message = "Query failed";
-      if (err instanceof BadRequestException) {
-        const body = err.getResponse();
-        message = typeof body === "string" ? body : err.message;
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      await this.prisma.queryRun.create({
-        data: {
-          connectionId,
-          savedQueryId: savedQueryId || null,
-          sqlText: sql,
-          success: false,
-          errorMessage: message,
-          durationMs,
-        },
-      });
-      if (err instanceof BadRequestException) {
-        throw err;
-      }
-      throw new BadRequestException(message);
-    }
+    return this.queryExecution.execute(organizationId, userId, connectionId, sql, savedQueryId);
   }
 
   async listRuns(organizationId: string, connectionId?: string) {
@@ -124,4 +52,17 @@ export class QueryService {
       },
     });
   }
+}
+
+function mapGenerateToAsk(res: GenerateSqlResponseDto): AskQuestionResponseDto {
+  if (res.status === "needs_clarification" || !res.generatedSql) {
+    return {
+      generatedSql: "",
+      explanation: res.explanation,
+    };
+  }
+  return {
+    generatedSql: res.generatedSql,
+    explanation: res.explanation,
+  };
 }

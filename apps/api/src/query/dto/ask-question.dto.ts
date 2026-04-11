@@ -1,7 +1,8 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsString } from "class-validator";
+import { IsPrismaClientId } from "../../common/validators/is-prisma-client-id.decorator";
 
 export class AskQuestionDto {
-  @IsUUID()
+  @IsPrismaClientId()
   connectionId!: string;
 
   @IsString()
