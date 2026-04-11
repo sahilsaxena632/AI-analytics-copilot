@@ -5,6 +5,38 @@ export interface SchemaColumnDto {
   columnName: string;
   dataType: string;
   isNullable: boolean;
+  isPrimaryKey?: boolean;
+}
+
+/** Single column in the live schema explorer (per table). */
+export interface SchemaExplorerColumnDto {
+  columnName: string;
+  dataType: string;
+  isNullable: boolean;
+  isPrimaryKey: boolean;
+}
+
+export interface SchemaExplorerTableDto {
+  tableSchema: string;
+  tableName: string;
+  columns: SchemaExplorerColumnDto[];
+}
+
+export interface SchemaExplorerSchemaDto {
+  connectionId: string;
+  dialect: "postgres" | "mysql";
+  tables: SchemaExplorerTableDto[];
+}
+
+export interface SchemaTablePreviewDto {
+  connectionId: string;
+  dialect: "postgres" | "mysql";
+  tableSchema: string | null;
+  tableName: string;
+  qualifiedName: string;
+  columns: string[];
+  rows: Record<string, unknown>[];
+  truncated: boolean;
 }
 
 export interface SchemaSnapshotDto {

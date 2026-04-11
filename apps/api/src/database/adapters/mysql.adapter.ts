@@ -4,6 +4,8 @@ import { createConnection, type Connection } from "mysql2/promise";
 import { assertReadOnlySql } from "@analytics-copilot/shared";
 import type { ConnectionCredentials } from "../connection-credentials.types";
 import { mapConnectionErrorMessage } from "../connection-error.mapper";
+import { SCHEMA_PREVIEW_ROW_LIMIT } from "../schema-preview.constants";
+import { assertSafeTableIdentifier } from "../table-identifier.util";
 import {
   DEFAULT_ADAPTER_QUERY_ROW_CAP,
   type AdapterExecuteResult,
@@ -18,7 +20,8 @@ SELECT TABLE_SCHEMA AS tableSchema,
        TABLE_NAME AS tableName,
        COLUMN_NAME AS columnName,
        DATA_TYPE AS dataType,
-       (IS_NULLABLE = 'YES') AS isNullable
+       (IS_NULLABLE = 'YES') AS isNullable,
+       (COLUMN_KEY = 'PRI') AS isPrimaryKey
 FROM information_schema.COLUMNS
 WHERE TABLE_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')
 ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION
@@ -69,16 +72,36 @@ export class MysqlAdapter implements DatabaseAdapter {
         columnName: pick(r, "columnName", "COLUMN_NAME"),
         dataType: pick(r, "dataType", "DATA_TYPE"),
         isNullable: toBool(r.isNullable ?? r.IS_NULLABLE),
+        isPrimaryKey: toBool(r.isPrimaryKey),
       }));
     } finally {
       await conn.end().catch(() => undefined);
     }
   }
 
-  async getTablePreview(_tableName: string): Promise<TablePreviewResult> {
-    // TODO: quote identifiers, schema.table split, LIMIT sample size, timeout
-    void _tableName;
-    return { columns: [], rows: [], truncated: false };
+  async getTablePreview(tableName: string): Promise<TablePreviewResult> {
+    const id = assertSafeTableIdentifier(tableName);
+    const parts = id.schema ? [id.schema, id.table] : [id.table];
+    const quoted = parts.map((p) => "`" + p.replace(/`/g, "``") + "`").join(".");
+    const limit = SCHEMA_PREVIEW_ROW_LIMIT;
+    const conn = await this.open();
+    try {
+      const wrapped = `SELECT * FROM ${quoted} LIMIT ${limit + 1}`;
+      const [rows, fields] = await conn.query<RowDataPacket[]>(wrapped);
+      const rowArr = rows as Record<string, unknown>[];
+      const truncated = rowArr.length > limit;
+      const sliced = rowArr.slice(0, limit);
+      const fieldList = fields as FieldPacket[];
+      const columns =
+        Array.isArray(fieldList) && fieldList.length > 0
+          ? fieldList.map((f) => f.name)
+          : sliced[0]
+            ? Object.keys(sliced[0])
+            : [];
+      return { columns, rows: sliced, truncated };
+    } finally {
+      await conn.end().catch(() => undefined);
+    }
   }
 
   async executeQuery(sql: string): Promise<AdapterExecuteResult> {

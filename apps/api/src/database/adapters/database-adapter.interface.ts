@@ -7,6 +7,8 @@ export interface SchemaColumnRow {
   columnName: string;
   dataType: string;
   isNullable: boolean;
+  /** Present when the source catalog exposes primary-key membership. */
+  isPrimaryKey?: boolean;
 }
 
 export type AdapterExecuteResult = {

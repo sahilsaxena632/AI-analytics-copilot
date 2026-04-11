@@ -20,7 +20,7 @@ const links = [
   { href: "/onboarding/connect-database", label: "Connect database", icon: Unplug },
   { href: "/ask", label: "Ask query", icon: MessageSquareText },
   { href: "/queries", label: "Saved queries", icon: Bookmark },
-  { href: "/schema", label: "Schema", icon: Table2 },
+  { href: "/app/schema", label: "Schema", icon: Table2 },
   { href: "/dashboards", label: "Dashboards", icon: LayoutDashboard },
   { href: "/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },

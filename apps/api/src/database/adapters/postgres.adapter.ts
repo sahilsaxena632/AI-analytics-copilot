@@ -4,6 +4,8 @@ import { assertReadOnlySql } from "@analytics-copilot/shared";
 import { buildPostgresConnectionUri } from "../uri/postgres-uri.builder";
 import type { ConnectionCredentials } from "../connection-credentials.types";
 import { mapConnectionErrorMessage } from "../connection-error.mapper";
+import { SCHEMA_PREVIEW_ROW_LIMIT } from "../schema-preview.constants";
+import { assertSafeTableIdentifier } from "../table-identifier.util";
 import {
   DEFAULT_ADAPTER_QUERY_ROW_CAP,
   type AdapterExecuteResult,
@@ -18,14 +20,27 @@ export type PostgresAdapterConfig =
   | { kind: "uri"; connectionUri: string };
 
 const PG_INTROSPECTION = `
-SELECT table_schema AS "tableSchema",
-       table_name AS "tableName",
-       column_name AS "columnName",
-       data_type AS "dataType",
-       (is_nullable = 'YES') AS "isNullable"
-FROM information_schema.columns
-WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
-ORDER BY table_schema, table_name, ordinal_position
+SELECT c.table_schema AS "tableSchema",
+       c.table_name AS "tableName",
+       c.column_name AS "columnName",
+       c.data_type AS "dataType",
+       (c.is_nullable = 'YES') AS "isNullable",
+       (EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_schema = kcu.constraint_schema
+           AND tc.constraint_name = kcu.constraint_name
+           AND tc.table_schema = kcu.table_schema
+           AND tc.table_name = kcu.table_name
+          WHERE tc.constraint_type = 'PRIMARY KEY'
+            AND kcu.table_schema = c.table_schema
+            AND kcu.table_name = c.table_name
+            AND kcu.column_name = c.column_name
+       )) AS "isPrimaryKey"
+FROM information_schema.columns c
+WHERE c.table_schema NOT IN ('pg_catalog', 'information_schema')
+ORDER BY c.table_schema, c.table_name, c.ordinal_position
 LIMIT 5000
 `;
 
@@ -76,16 +91,38 @@ export class PostgresAdapter implements DatabaseAdapter {
     await client.connect();
     try {
       const res = await client.query(PG_INTROSPECTION);
-      return res.rows as SchemaColumnRow[];
+      return (res.rows as Record<string, unknown>[]).map((r) => ({
+        tableSchema: String(r.tableSchema ?? ""),
+        tableName: String(r.tableName ?? ""),
+        columnName: String(r.columnName ?? ""),
+        dataType: String(r.dataType ?? ""),
+        isNullable: Boolean(r.isNullable),
+        isPrimaryKey: Boolean(r.isPrimaryKey),
+      }));
     } finally {
       await client.end().catch(() => undefined);
     }
   }
 
-  async getTablePreview(_tableName: string): Promise<TablePreviewResult> {
-    // TODO: quote identifiers, optional schema.table, LIMIT sample size, timeout
-    void _tableName;
-    return { columns: [], rows: [], truncated: false };
+  async getTablePreview(tableName: string): Promise<TablePreviewResult> {
+    const id = assertSafeTableIdentifier(tableName);
+    const parts = id.schema ? [id.schema, id.table] : [id.table];
+    const quoted = parts.map((p) => `"${p.replace(/"/g, '""')}"`).join(".");
+    const limit = SCHEMA_PREVIEW_ROW_LIMIT;
+    const client = new Client({
+      connectionString: this.connectionString(),
+      statement_timeout: 30_000,
+    });
+    await client.connect();
+    try {
+      const res = await client.query(`SELECT * FROM ${quoted} LIMIT ${limit + 1}`);
+      const truncated = res.rows.length > limit;
+      const rows = res.rows.slice(0, limit).map((r) => ({ ...r }));
+      const columns = res.fields.map((f) => f.name);
+      return { columns, rows, truncated };
+    } finally {
+      await client.end().catch(() => undefined);
+    }
   }
 
   async executeQuery(sql: string): Promise<AdapterExecuteResult> {
