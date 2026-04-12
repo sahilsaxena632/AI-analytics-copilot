@@ -24,6 +24,7 @@ export class QueryExecutionService {
     connectionId: string,
     sql: string,
     savedQueryId?: string | null,
+    naturalLanguageQuestion?: string | null,
   ): Promise<QueryExecuteResultDto> {
     let normalized = sql.trim().replace(/;+\s*$/g, "").trim();
 
@@ -63,6 +64,7 @@ export class QueryExecutionService {
           connectionId,
           savedQueryId: savedQueryId || null,
           sqlText: sql,
+          naturalLanguageQuestion: naturalLanguageQuestion?.trim() || null,
           rowCount: safeRows.length,
           success: true,
           durationMs,
@@ -100,6 +102,7 @@ export class QueryExecutionService {
           connectionId,
           savedQueryId: savedQueryId || null,
           sqlText: sql,
+          naturalLanguageQuestion: naturalLanguageQuestion?.trim() || null,
           success: false,
           errorMessage: message,
           durationMs,

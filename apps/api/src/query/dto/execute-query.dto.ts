@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
 import { IsOptionalPrismaClientId, IsPrismaClientId } from "../../common/validators/is-prisma-client-id.decorator";
 
 export class ExecuteQueryDto {
@@ -11,4 +11,9 @@ export class ExecuteQueryDto {
   @IsString()
   @IsNotEmpty()
   sql!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  naturalLanguageQuestion?: string;
 }

@@ -95,6 +95,8 @@ model SavedQuery {
   connection              DatabaseConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   title                   String
   sqlText                 String
+  /// SQL as first produced by the assistant (before user edits), when applicable.
+  generatedSqlText        String?
   naturalLanguageQuestion String?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
@@ -112,6 +114,8 @@ model QueryRun {
   connectionId String
   connection   DatabaseConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   sqlText      String
+  /// Question that led to this run (Ask flow), when provided at execution time.
+  naturalLanguageQuestion String?
   rowCount     Int?
   success      Boolean
   errorMessage String?

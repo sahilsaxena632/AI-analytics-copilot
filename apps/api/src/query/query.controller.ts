@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { QueryService } from "./query.service";
+import { QueryRunsService } from "./query-runs.service";
 import { AskQuestionDto } from "./dto/ask-question.dto";
 import { ExecuteQueryDto } from "./dto/execute-query.dto";
 import { CurrentUser, type AuthUserPayload } from "../common/decorators/current-user.decorator";
@@ -8,7 +9,10 @@ import { CurrentUser, type AuthUserPayload } from "../common/decorators/current-
 @Controller("query")
 @UseGuards(AuthGuard("jwt"))
 export class QueryController {
-  constructor(private readonly query: QueryService) {}
+  constructor(
+    private readonly query: QueryService,
+    private readonly queryRuns: QueryRunsService,
+  ) {}
 
   @Post("ask")
   ask(@CurrentUser() user: AuthUserPayload, @Body() dto: AskQuestionDto) {
@@ -23,6 +27,7 @@ export class QueryController {
       dto.connectionId,
       dto.sql,
       dto.savedQueryId,
+      dto.naturalLanguageQuestion,
     );
   }
 
@@ -31,6 +36,6 @@ export class QueryController {
     @CurrentUser() user: AuthUserPayload,
     @Query("connectionId") connectionId?: string,
   ) {
-    return this.query.listRuns(user.organizationId, connectionId);
+    return this.queryRuns.list(user.organizationId, connectionId);
   }
 }

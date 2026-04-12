@@ -21,7 +21,8 @@ export class SavedQueriesService {
         connectionId: dto.connectionId,
         title: dto.title,
         sqlText: dto.sqlText,
-        naturalLanguageQuestion: dto.naturalLanguageQuestion,
+        generatedSqlText: dto.generatedSqlText?.trim() || null,
+        naturalLanguageQuestion: dto.naturalLanguageQuestion?.trim() || null,
       },
     });
     await this.audit.log({
@@ -56,6 +57,7 @@ export class SavedQueriesService {
     id: string;
     title: string;
     sqlText: string;
+    generatedSqlText: string | null;
     naturalLanguageQuestion: string | null;
     connectionId: string;
     createdAt: Date;
@@ -65,6 +67,7 @@ export class SavedQueriesService {
       id: row.id,
       title: row.title,
       sqlText: row.sqlText,
+      generatedSqlText: row.generatedSqlText,
       naturalLanguageQuestion: row.naturalLanguageQuestion,
       connectionId: row.connectionId,
       createdAt: row.createdAt.toISOString(),

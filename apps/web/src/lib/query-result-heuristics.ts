@@ -35,6 +35,18 @@ function isLikelyDateColumn(name: string, sample: unknown): boolean {
   return false;
 }
 
+/** Maps heuristic chart shape to dashboard card chart types. */
+export function inferDashboardCardChartType(result: QueryExecuteResultDto | null): "bar" | "line" | "table" {
+  const k = inferChartKind(result);
+  if (k === "line") {
+    return "line";
+  }
+  if (k === "bar") {
+    return "bar";
+  }
+  return "table";
+}
+
 export function inferChartKind(result: QueryExecuteResultDto | null): ChartKind {
   if (!result || result.rows.length === 0 || result.columns.length === 0) {
     return "none";

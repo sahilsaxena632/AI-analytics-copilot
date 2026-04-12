@@ -16,6 +16,8 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { qualifiedTableName } from "@/components/schema-explorer/schema-table-sidebar";
 import { MessageSquareText } from "lucide-react";
+import { SaveQueryModal, AddToDashboardModal } from "@/components/query-workspace-modals";
+import { inferDashboardCardChartType } from "@/lib/query-result-heuristics";
 
 type Connection = { id: string; name: string; isActive: boolean };
 
@@ -42,6 +44,9 @@ export default function AppAskPage() {
   const [result, setResult] = useState<QueryExecuteResultDto | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [savedQueryId, setSavedQueryId] = useState<string | null>(null);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [dashboardModalOpen, setDashboardModalOpen] = useState(false);
 
   const activeConnections = useMemo(() => connections.filter((c) => c.isActive), [connections]);
 
@@ -136,13 +141,20 @@ export default function AppAskPage() {
     setBusy("run");
     setError(null);
     try {
+      const body: Record<string, string | undefined> = {
+        databaseConnectionId: connectionId,
+        sql,
+      };
+      if (question.trim()) {
+        body.naturalLanguageQuestion = question.trim();
+      }
+      if (savedQueryId) {
+        body.savedQueryId = savedQueryId;
+      }
       const res = await apiFetch<QueryExecuteResultDto>("/queries/execute", {
         method: "POST",
         token,
-        body: JSON.stringify({
-          databaseConnectionId: connectionId,
-          sql,
-        }),
+        body: JSON.stringify(body),
       });
       setResult(res);
     } catch (err) {
@@ -203,6 +215,7 @@ export default function AppAskPage() {
                         setSelectedTable("");
                         setGenerateRes(null);
                         setResult(null);
+                        setSavedQueryId(null);
                       }}
                     >
                       {activeConnections.map((c) => (
@@ -310,6 +323,28 @@ export default function AppAskPage() {
                 <CardDescription>Table, automatic chart, and a short narrative summary.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {result ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" variant="secondary" size="sm" onClick={() => setSaveModalOpen(true)}>
+                      Save query
+                    </Button>
+                    <Button type="button" variant="secondary" size="sm" onClick={() => setDashboardModalOpen(true)}>
+                      Add to dashboard
+                    </Button>
+                    {savedQueryId ? (
+                      <span className="text-xs text-muted">
+                        Next runs are linked to saved query{" "}
+                        <button
+                          type="button"
+                          className="text-primary underline-offset-2 hover:underline"
+                          onClick={() => setSavedQueryId(null)}
+                        >
+                          (clear)
+                        </button>
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 <DataTable result={result} />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <QueryAutoChart result={result} />
@@ -320,6 +355,29 @@ export default function AppAskPage() {
           </div>
         )}
       </main>
+      {token && connectionId ? (
+        <>
+          <SaveQueryModal
+            open={saveModalOpen}
+            token={token}
+            connectionId={connectionId}
+            question={question}
+            sql={sql}
+            generatedSql={generateRes?.status === "ok" && generateRes.generatedSql ? generateRes.generatedSql : null}
+            onClose={() => setSaveModalOpen(false)}
+            onSaved={(row) => setSavedQueryId(row.id)}
+          />
+          <AddToDashboardModal
+            open={dashboardModalOpen}
+            token={token}
+            connectionId={connectionId}
+            sql={sql}
+            defaultTitle={question.trim().slice(0, 120) || "Insight"}
+            defaultChartType={inferDashboardCardChartType(result)}
+            onClose={() => setDashboardModalOpen(false)}
+          />
+        </>
+      ) : null}
     </>
   );
 }

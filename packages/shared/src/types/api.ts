@@ -80,10 +80,30 @@ export interface SavedQueryDto {
   id: string;
   title: string;
   sqlText: string;
+  /** Assistant-generated SQL before edits, when captured. */
+  generatedSqlText?: string | null;
   naturalLanguageQuestion?: string | null;
   connectionId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Enriched row from GET /query-runs (and legacy GET /query/runs). */
+export interface QueryRunHistoryDto {
+  id: string;
+  connectionId: string;
+  connectionName: string;
+  databaseType: "postgres" | "mysql";
+  sqlText: string;
+  naturalLanguageQuestion: string | null;
+  savedQueryId: string | null;
+  savedQueryTitle: string | null;
+  savedQueryQuestion: string | null;
+  rowCount: number | null;
+  success: boolean;
+  errorMessage: string | null;
+  durationMs: number | null;
+  createdAt: string;
 }
 
 export interface DashboardCardDto {

@@ -1,13 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import type { AskQuestionResponseDto, GenerateSqlResponseDto, QueryExecuteResultDto } from "@analytics-copilot/shared";
-import { PrismaService } from "../prisma/prisma.service";
 import { SqlGenerationService } from "./sql-generation.service";
 import { QueryExecutionService } from "./query-execution.service";
 
 @Injectable()
 export class QueryService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly sqlGeneration: SqlGenerationService,
     private readonly queryExecution: QueryExecutionService,
   ) {}
@@ -27,30 +25,16 @@ export class QueryService {
     connectionId: string,
     sql: string,
     savedQueryId?: string | null,
+    naturalLanguageQuestion?: string | null,
   ): Promise<QueryExecuteResultDto> {
-    return this.queryExecution.execute(organizationId, userId, connectionId, sql, savedQueryId);
-  }
-
-  async listRuns(organizationId: string, connectionId?: string) {
-    const where = {
-      connection: { organizationId },
-      ...(connectionId ? { connectionId } : {}),
-    };
-    return this.prisma.queryRun.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      select: {
-        id: true,
-        connectionId: true,
-        sqlText: true,
-        rowCount: true,
-        success: true,
-        errorMessage: true,
-        durationMs: true,
-        createdAt: true,
-      },
-    });
+    return this.queryExecution.execute(
+      organizationId,
+      userId,
+      connectionId,
+      sql,
+      savedQueryId,
+      naturalLanguageQuestion,
+    );
   }
 }
 

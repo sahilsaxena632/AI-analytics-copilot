@@ -21,8 +21,8 @@ const links = [
   { href: "/app/ask", label: "Ask query", icon: MessageSquareText },
   { href: "/queries", label: "Saved queries", icon: Bookmark },
   { href: "/app/schema", label: "Schema", icon: Table2 },
-  { href: "/dashboards", label: "Dashboards", icon: LayoutDashboard },
-  { href: "/history", label: "History", icon: History },
+  { href: "/app/dashboards", label: "Dashboards", icon: LayoutDashboard },
+  { href: "/app/history", label: "History", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

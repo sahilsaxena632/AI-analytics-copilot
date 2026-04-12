@@ -27,6 +27,7 @@ export class QueriesController {
       dto.databaseConnectionId,
       dto.sql,
       dto.savedQueryId,
+      dto.naturalLanguageQuestion,
     );
   }
 }

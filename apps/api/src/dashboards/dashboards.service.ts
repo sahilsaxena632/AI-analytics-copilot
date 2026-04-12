@@ -15,7 +15,7 @@ export class DashboardsService {
   ) {}
 
   async list(organizationId: string) {
-    return this.prisma.dashboard.findMany({
+    const rows = await this.prisma.dashboard.findMany({
       where: { organizationId },
       orderBy: { updatedAt: "desc" },
       select: {
@@ -27,16 +27,29 @@ export class DashboardsService {
         _count: { select: { cards: true } },
       },
     });
+    return rows.map((d) => ({
+      id: d.id,
+      name: d.name,
+      description: d.description,
+      createdAt: d.createdAt.toISOString(),
+      updatedAt: d.updatedAt.toISOString(),
+      _count: d._count,
+    }));
   }
 
   async create(organizationId: string, dto: CreateDashboardDto) {
-    return this.prisma.dashboard.create({
+    const created = await this.prisma.dashboard.create({
       data: {
         organizationId,
         name: dto.name,
         description: dto.description,
       },
     });
+    return {
+      ...created,
+      createdAt: created.createdAt.toISOString(),
+      updatedAt: created.updatedAt.toISOString(),
+    };
   }
 
   async getById(id: string, organizationId: string) {
