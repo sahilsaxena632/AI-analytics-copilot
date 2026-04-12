@@ -2,21 +2,9 @@
 
 import type { SchemaTablePreviewDto } from "@analytics-copilot/shared";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorBanner } from "@/components/error-banner";
 import { LoadingState } from "@/components/loading-state";
-
-function formatCell(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "—";
-  }
-  if (typeof value === "object") {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-}
+import { formatCellValue } from "@/lib/format-cell-value";
 
 type Props = {
   preview: SchemaTablePreviewDto | null;
@@ -27,7 +15,7 @@ type Props = {
 
 export function SchemaDataPreview({ preview, loading, error, title = "Sample rows" }: Props) {
   return (
-    <Card className="border-border bg-card/60">
+    <Card className="border-border bg-card/40 shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>
@@ -35,7 +23,7 @@ export function SchemaDataPreview({ preview, loading, error, title = "Sample row
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        {error ? <ErrorBanner title="Preview didn’t load" message={error} /> : null}
         {loading ? (
           <div className="flex justify-center py-10">
             <LoadingState label="Loading sample rows…" />
@@ -62,8 +50,8 @@ export function SchemaDataPreview({ preview, loading, error, title = "Sample row
                   {preview.rows.map((row, ri) => (
                     <tr key={ri} className="border-t border-border/60 odd:bg-background/30">
                       {preview.columns.map((col) => (
-                        <td key={col} className="max-w-[240px] truncate px-3 py-2 text-muted" title={formatCell(row[col])}>
-                          {formatCell(row[col])}
+                        <td key={col} className="max-w-[240px] truncate px-3 py-2 text-muted" title={formatCellValue(row[col])}>
+                          {formatCellValue(row[col])}
                         </td>
                       ))}
                     </tr>

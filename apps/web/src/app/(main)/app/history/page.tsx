@@ -6,7 +6,10 @@ import { AppHeader } from "@/components/app-header";
 import { LoadingState } from "@/components/loading-state";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { PageMain } from "@/components/page-main";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
 import { Clock, Database, HelpCircle, Tag } from "lucide-react";
 
@@ -41,7 +44,7 @@ export default function AppHistoryPage() {
       const rows = await apiFetch<QueryRunHistoryDto[]>("/query-runs", { token });
       setRuns(rows);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not load history.");
+      setError(friendlyApiMessage(e, "Query history could not be loaded."));
     } finally {
       setLoading(false);
     }
@@ -63,11 +66,11 @@ export default function AppHistoryPage() {
         title="Query history"
         subtitle="Recent questions and runs across your databases — easy to scan for managers."
       />
-      <main className="flex flex-1 flex-col gap-6 p-6 md:p-8">
+      <PageMain gapClassName="gap-6">
         {!token ? (
           <EmptyState title="Sign in required" description="Sign in to see your organization’s query history." />
         ) : error ? (
-          <p className="rounded-md border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-200">{error}</p>
+          <ErrorBanner message={error} />
         ) : loading ? (
           <LoadingState label="Loading history…" />
         ) : empty ? (
@@ -173,7 +176,7 @@ export default function AppHistoryPage() {
             </div>
           </div>
         )}
-      </main>
+      </PageMain>
     </>
   );
 }

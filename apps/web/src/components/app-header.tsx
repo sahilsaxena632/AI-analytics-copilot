@@ -10,22 +10,23 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const router = useRouter();
 
   return (
-    <header className="flex items-start justify-between gap-4 border-b border-border bg-background/80 px-8 py-6 backdrop-blur">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
+    <header className="flex flex-col gap-4 border-b border-border bg-card/20 px-6 py-5 backdrop-blur-sm sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-6">
+      <div className="min-w-0 flex-1">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
+        {subtitle ? <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">{subtitle}</p> : null}
       </div>
-      <div className="flex items-center gap-3">
-        <div className="text-right text-xs text-muted">
-          <p className="font-medium text-foreground">{user?.email}</p>
-          <p className="truncate max-w-[200px]" title={user?.organizationId}>
-            Org: {user?.organizationId?.slice(0, 8)}…
+      <div className="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+        <div className="text-left text-xs text-muted sm:text-right">
+          <p className="text-[11px] uppercase tracking-wide text-muted/80">Signed in</p>
+          <p className="truncate font-medium text-foreground sm:max-w-[220px]" title={user?.email ?? undefined}>
+            {user?.email}
           </p>
         </div>
         <Button
           type="button"
           variant="secondary"
           size="sm"
+          className="whitespace-nowrap"
           onClick={() => {
             clearSession();
             router.push("/login");

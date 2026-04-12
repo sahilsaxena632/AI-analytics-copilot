@@ -6,7 +6,10 @@ import type { SavedQueryDto } from "@analytics-copilot/shared";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingState } from "@/components/loading-state";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { PageMain } from "@/components/page-main";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
 
 export default function QueryDetailPage() {
@@ -24,36 +27,47 @@ export default function QueryDetailPage() {
     }
     void apiFetch<SavedQueryDto>(`/saved-queries/${id}`, { token })
       .then(setQ)
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Failed to load"))
+      .catch((e) => setError(friendlyApiMessage(e, "This saved query could not be loaded.")))
       .finally(() => setLoading(false));
   }, [token, id]);
 
   return (
     <>
-      <AppHeader title={q?.title ?? "Query"} subtitle="Saved SQL detail — run again from Ask query." />
-      <main className="flex flex-1 flex-col gap-6 p-8">
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
-        {loading ? <LoadingState /> : null}
+      <AppHeader title={q?.title ?? "Saved query"} subtitle="Review the question and SQL, then run again from Ask query." />
+      <PageMain gapClassName="gap-6">
+        {error ? <ErrorBanner message={error} /> : null}
+        {loading ? <LoadingState label="Loading saved query…" /> : null}
         {q ? (
-          <Card>
+          <Card className="border-border bg-card/40 shadow-sm">
             <CardHeader>
               <CardTitle>{q.title}</CardTitle>
-              <CardDescription>
-                Connection <span className="font-mono text-foreground">{q.connectionId}</span>
-              </CardDescription>
+              <CardDescription>Uses one of your connected databases. Run from Ask query to pick the connection and refresh results.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {q.naturalLanguageQuestion ? (
-                <div>
-                  <p className="text-xs uppercase text-muted">Original question</p>
-                  <p className="text-sm text-foreground">{q.naturalLanguageQuestion}</p>
+                <div className="rounded-lg border border-border/60 bg-background/40 px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Original question</p>
+                  <p className="mt-1 text-sm text-foreground">{q.naturalLanguageQuestion}</p>
                 </div>
               ) : null}
-              <pre className="overflow-x-auto rounded-md bg-background/60 p-4 text-xs text-foreground">{q.sqlText}</pre>
+              {q.generatedSqlText && q.generatedSqlText.trim() !== q.sqlText.trim() ? (
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Suggested SQL (before edits)</p>
+                  <pre className="mt-1 overflow-x-auto rounded-md border border-border/60 bg-background/50 p-3 font-mono text-xs text-foreground">
+                    {q.generatedSqlText}
+                  </pre>
+                </div>
+              ) : null}
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">SQL you saved</p>
+                <pre className="mt-1 overflow-x-auto rounded-md border border-border bg-background/60 p-4 font-mono text-xs leading-relaxed text-foreground">
+                  {q.sqlText}
+                </pre>
+              </div>
             </CardContent>
           </Card>
         ) : null}
-      </main>
+      </PageMain>
     </>
   );
 }

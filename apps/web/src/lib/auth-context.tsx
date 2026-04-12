@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { LoadingState } from "@/components/loading-state";
 
 type User = { id: string; email: string; organizationId: string };
 
@@ -53,8 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted">
-        Loading…
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <LoadingState bordered label="Loading your session…" />
       </div>
     );
   }

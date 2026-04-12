@@ -10,7 +10,10 @@ import { qualifiedTableName, SchemaTableSidebar } from "@/components/schema-expl
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { LoadingState } from "@/components/loading-state";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { PageMain } from "@/components/page-main";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
 import { Database, Table2 } from "lucide-react";
 
@@ -52,8 +55,8 @@ export default function AppSchemaExplorerPage() {
         }
         return rows.find((r) => r.isActive)?.id ?? "";
       });
-    } catch {
-      setConnectionsError("We could not load your saved connections.");
+    } catch (e) {
+      setConnectionsError(friendlyApiMessage(e, "Your saved connections could not be loaded."));
     } finally {
       setConnectionsLoading(false);
     }
@@ -80,7 +83,7 @@ export default function AppSchemaExplorerPage() {
       setSchema(data);
     } catch (err) {
       setSchema(null);
-      setSchemaError(err instanceof ApiError ? err.message : "The schema could not be loaded.");
+      setSchemaError(friendlyApiMessage(err, "The schema could not be loaded."));
     } finally {
       setSchemaLoading(false);
     }
@@ -115,7 +118,7 @@ export default function AppSchemaExplorerPage() {
         );
         setPreview(data);
       } catch (err) {
-        setPreviewError(err instanceof ApiError ? err.message : "The row preview could not be loaded.");
+        setPreviewError(friendlyApiMessage(err, "The row preview could not be loaded."));
       } finally {
         setPreviewLoading(false);
       }
@@ -144,15 +147,11 @@ export default function AppSchemaExplorerPage() {
         title="Schema explorer"
         subtitle="Browse tables, columns, and sample data from your connected warehouses."
       />
-      <main className="flex flex-1 flex-col gap-6 p-6 md:p-8">
+      <PageMain gapClassName="gap-6">
         {!token ? (
           <EmptyState title="Sign in required" description="Sign in to explore database schemas." />
         ) : connectionsError ? (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardContent className="py-6">
-              <p className="text-sm text-red-200">{connectionsError}</p>
-            </CardContent>
-          </Card>
+          <ErrorBanner message={connectionsError} />
         ) : connectionsLoading && connections.length === 0 ? (
           <Card className="border-border bg-card/50">
             <CardContent className="flex justify-center py-16">
@@ -196,13 +195,7 @@ export default function AppSchemaExplorerPage() {
               </CardContent>
             </Card>
 
-            {schemaError ? (
-              <Card className="border-destructive/40 bg-destructive/5">
-                <CardContent className="py-6">
-                  <p className="text-sm text-red-200">{schemaError}</p>
-                </CardContent>
-              </Card>
-            ) : null}
+            {schemaError ? <ErrorBanner message={schemaError} /> : null}
 
             <div className="grid min-h-[480px] flex-1 gap-6 lg:grid-cols-[minmax(220px,280px)_1fr]">
               <SchemaTableSidebar
@@ -241,7 +234,7 @@ export default function AppSchemaExplorerPage() {
             </div>
           </>
         )}
-      </main>
+      </PageMain>
     </>
   );
 }

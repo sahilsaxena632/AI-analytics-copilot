@@ -1,21 +1,26 @@
 import { AppHeader } from "@/components/app-header";
+import { PageMain } from "@/components/page-main";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SettingsPage() {
   return (
     <>
-      <AppHeader title="Settings" subtitle="Organization and profile settings — MVP placeholder." />
-      <main className="flex flex-1 flex-col gap-6 p-8">
-        <Card>
+      <AppHeader title="Settings" subtitle="Workspace preferences and organization options." />
+      <PageMain gapClassName="gap-6">
+        <Card className="border-border bg-card/40 shadow-sm">
           <CardHeader>
-            <CardTitle>TODO</CardTitle>
-            <CardDescription>Extend with organization rename, invites, API keys for LLM providers, and secrets management.</CardDescription>
+            <CardTitle>Coming soon</CardTitle>
+            <CardDescription>
+              We’ll add team-friendly options here—such as renaming your workspace, invitations, and safer handling of
+              credentials.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="text-sm text-muted">
-            Connection strings should move to an encrypted vault before production use.
+          <CardContent className="text-sm leading-relaxed text-muted">
+            For demos, use the sidebar to manage connections and run analytics. Production deployments should store secrets
+            in a vault, not in the app database.
           </CardContent>
         </Card>
-      </main>
+      </PageMain>
     </>
   );
 }

@@ -1,18 +1,21 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export function InsightCard({
   title,
   description,
   value,
   trend,
+  className,
 }: {
   title: string;
   description?: string;
   value: string;
   trend?: string;
+  className?: string;
 }) {
   return (
-    <Card>
+    <Card className={cn("border-border bg-card/40 shadow-sm", className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium">{title}</CardTitle>
         {description ? <CardDescription>{description}</CardDescription> : null}

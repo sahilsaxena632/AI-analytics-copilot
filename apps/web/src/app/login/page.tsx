@@ -2,7 +2,9 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { apiFetch, ApiError } from "@/lib/api";
+import { LoadingState } from "@/components/loading-state";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,8 +37,8 @@ function LoginForm() {
 
   if (token) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-muted">
-        Redirecting…
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <LoadingState bordered label="Redirecting…" />
       </div>
     );
   }
@@ -56,7 +58,7 @@ function LoginForm() {
       setSession(res.accessToken, res.user);
       router.replace(next);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Login failed");
+      setError(friendlyApiMessage(err, "Sign-in didn’t work. Check your email and password."));
     } finally {
       setLoading(false);
     }
@@ -64,10 +66,10 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
+      <Card className="w-full max-w-md border-border bg-card/95 shadow-lg shadow-black/10">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
-          <CardDescription>Use the seeded demo user or register via the API.</CardDescription>
+          <CardDescription>Use your workspace account. Demo credentials work after the database is seeded.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
@@ -106,7 +108,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center text-muted text-sm">Loading…</div>
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <LoadingState bordered label="Loading sign-in…" />
+        </div>
       }
     >
       <LoginForm />

@@ -9,7 +9,10 @@ import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { QueryAutoChart } from "@/components/query-auto-chart";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { PageMain } from "@/components/page-main";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
 
 type DashboardDetail = {
@@ -35,6 +38,16 @@ function dbLabel(t: SafeConnection["type"]): string {
   return t === "mysql" ? "MySQL" : "PostgreSQL";
 }
 
+function chartKindLabel(chartType: string): string {
+  if (chartType === "line") {
+    return "Line";
+  }
+  if (chartType === "bar") {
+    return "Bar";
+  }
+  return "Table";
+}
+
 export default function AppDashboardDetailPage() {
   const params = useParams();
   const id = String(params.id ?? "");
@@ -44,6 +57,7 @@ export default function AppDashboardDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<Record<string, QueryExecuteResultDto | null | "loading" | "error">>({});
+  const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!token || !id) {
@@ -60,7 +74,7 @@ export default function AppDashboardDetailPage() {
         setData(dash);
         setConnections(conns);
       })
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Failed to load"))
+      .catch((e) => setError(friendlyApiMessage(e, "This dashboard could not be loaded.")))
       .finally(() => setLoading(false));
   }, [token, id]);
 
@@ -78,6 +92,11 @@ export default function AppDashboardDetailPage() {
         return;
       }
       setPreview((p) => ({ ...p, [cardId]: "loading" }));
+      setPreviewErrors((m) => {
+        const next = { ...m };
+        delete next[cardId];
+        return next;
+      });
       try {
         const res = await apiFetch<QueryExecuteResultDto>("/queries/execute", {
           method: "POST",
@@ -85,8 +104,12 @@ export default function AppDashboardDetailPage() {
           body: JSON.stringify({ databaseConnectionId: connectionId, sql }),
         });
         setPreview((p) => ({ ...p, [cardId]: res }));
-      } catch {
+      } catch (e) {
         setPreview((p) => ({ ...p, [cardId]: "error" }));
+        setPreviewErrors((m) => ({
+          ...m,
+          [cardId]: friendlyApiMessage(e, "This card could not be refreshed right now."),
+        }));
       }
     },
     [token],
@@ -95,15 +118,16 @@ export default function AppDashboardDetailPage() {
   return (
     <>
       <AppHeader title={data?.name ?? "Dashboard"} subtitle={data?.description ?? ""} />
-      <main className="flex flex-1 flex-col gap-6 p-6 md:p-8">
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
-        {loading ? <LoadingState /> : null}
+      <PageMain gapClassName="gap-6">
+        {error ? <ErrorBanner message={error} /> : null}
+        {loading ? <LoadingState label="Loading dashboard…" /> : null}
         {!loading && data ? (
           <div className="space-y-6">
             {data.cards.length === 0 ? (
               <Card className="border-dashed border-border bg-card/30">
-                <CardContent className="py-10 text-center text-sm text-muted">
-                  No cards yet. Add one from Ask query using &quot;Add to dashboard&quot;.
+                <CardContent className="py-10 text-center text-sm leading-relaxed text-muted">
+                  No cards yet. Use <span className="font-medium text-foreground">Ask query</span> and choose{" "}
+                  <span className="font-medium text-foreground">Add to dashboard</span> to pin a result here.
                 </CardContent>
               </Card>
             ) : (
@@ -111,27 +135,35 @@ export default function AppDashboardDetailPage() {
                 const conn = connMap.get(c.connectionId);
                 const state = preview[c.id];
                 return (
-                  <Card key={c.id} className="border-border bg-card/40">
+                  <Card key={c.id} className="border-border bg-card/40 shadow-sm">
                     <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <CardTitle className="text-lg">{c.title}</CardTitle>
                         <CardDescription>
-                          {c.chartType} chart · {conn ? `${dbLabel(conn.type)} · ${conn.name}` : "Connection"}
+                          {chartKindLabel(c.chartType)} · {conn ? `${dbLabel(conn.type)} · ${conn.name}` : "Database"}
                         </CardDescription>
                       </div>
-                      <Button type="button" variant="secondary" size="sm" onClick={() => void runPreview(c.id, c.connectionId, c.sqlText)}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="whitespace-nowrap"
+                        onClick={() => void runPreview(c.id, c.connectionId, c.sqlText)}
+                      >
                         {state === "loading" ? "Loading…" : state && state !== "error" ? "Refresh data" : "Load preview"}
                       </Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <details className="rounded-md border border-border/60 bg-background/40">
-                        <summary className="cursor-pointer px-3 py-2 text-xs text-muted">SQL</summary>
+                      <details className="rounded-lg border border-border/60 bg-background/40">
+                        <summary className="cursor-pointer px-3 py-2.5 text-xs font-medium text-muted">
+                          View SQL
+                        </summary>
                         <pre className="overflow-x-auto border-t border-border/50 p-3 font-mono text-[11px] leading-relaxed text-foreground">
                           {c.sqlText}
                         </pre>
                       </details>
-                      {state === "error" ? (
-                        <p className="text-sm text-red-300">Could not run this query. Check the connection or SQL.</p>
+                      {state === "error" && previewErrors[c.id] ? (
+                        <ErrorBanner title="Preview didn’t load" message={previewErrors[c.id]} />
                       ) : null}
                       {state && state !== "loading" && state !== "error" ? (
                         <div className="space-y-4">
@@ -139,9 +171,11 @@ export default function AppDashboardDetailPage() {
                           {c.chartType !== "table" ? <QueryAutoChart result={state} /> : null}
                         </div>
                       ) : state === "loading" ? (
-                        <LoadingState label="Running read-only query…" />
+                        <LoadingState label="Fetching latest numbers…" />
                       ) : (
-                        <p className="text-sm text-muted">Load preview to see current data from your database.</p>
+                        <p className="rounded-lg border border-dashed border-border/70 bg-card/20 px-3 py-4 text-sm text-muted">
+                          Load preview to pull the current numbers from your database.
+                        </p>
                       )}
                     </CardContent>
                   </Card>
@@ -150,7 +184,7 @@ export default function AppDashboardDetailPage() {
             )}
           </div>
         ) : null}
-      </main>
+      </PageMain>
     </>
   );
 }

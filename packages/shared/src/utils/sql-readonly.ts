@@ -8,7 +8,7 @@ const BLOCKED =
 export function assertReadOnlySql(sql: string): void {
   const trimmed = sql.trim();
   if (!trimmed) {
-    throw new Error("SQL must not be empty");
+    throw new Error("Add a SQL query before running.");
   }
   if (trimmed.includes(";") && trimmed.replace(/;+\s*$/g, "").includes(";")) {
     throw new Error("Only a single SQL statement is allowed");
@@ -19,6 +19,6 @@ export function assertReadOnlySql(sql: string): void {
     throw new Error("Only SELECT or WITH queries are allowed");
   }
   if (BLOCKED.test(withoutTrailingSemicolon)) {
-    throw new Error("Query contains disallowed keywords for read-only execution");
+    throw new Error("This statement includes commands that are not allowed for read-only analytics.");
   }
 }

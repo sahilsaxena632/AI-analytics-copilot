@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Database, ShieldCheck } from "lucide-react";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ErrorBanner } from "@/components/error-banner";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -85,7 +87,7 @@ export default function OnboardingConnectDatabasePage() {
         setSuccessMsg(res.message ?? "Connection looks good.");
       }
     } catch (e) {
-      setErrorMsg(e instanceof ApiError ? e.message : "Could not reach the database.");
+      setErrorMsg(friendlyApiMessage(e, "We couldn’t reach the database with these settings."));
     } finally {
       setTesting(false);
     }
@@ -112,7 +114,7 @@ export default function OnboardingConnectDatabasePage() {
         setSuccessMsg(res.message ?? "Saved.");
       }
     } catch (e) {
-      setErrorMsg(e instanceof ApiError ? e.message : "Could not save this connection.");
+      setErrorMsg(friendlyApiMessage(e, "This connection could not be saved."));
     } finally {
       setSaving(false);
     }
@@ -154,12 +156,7 @@ export default function OnboardingConnectDatabasePage() {
         </p>
       </header>
 
-      {errorMsg ? (
-        <Alert variant="destructive">
-          <AlertTitle>Connection issue</AlertTitle>
-          <AlertDescription>{errorMsg}</AlertDescription>
-        </Alert>
-      ) : null}
+      {errorMsg ? <ErrorBanner title="Connection issue" message={errorMsg} /> : null}
       {successMsg && !errorMsg ? (
         <Alert variant="success">
           <AlertTitle>All set</AlertTitle>

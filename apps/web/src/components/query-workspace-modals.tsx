@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
 
 type DashboardListRow = {
   id: string;
@@ -103,7 +104,7 @@ export function SaveQueryModal(props: {
       onSaved(row);
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not save query.");
+      setError(friendlyApiMessage(e, "Could not save query."));
     } finally {
       setBusy(false);
     }
@@ -243,7 +244,7 @@ export function AddToDashboardModal(props: {
       onAdded?.(card);
       onClose();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not add card.");
+      setError(friendlyApiMessage(e, "Could not add card."));
     } finally {
       setBusy(false);
     }

@@ -11,7 +11,7 @@ export function QueryInsightsPanel({ result }: { result: QueryExecuteResultDto |
     return null;
   }
   return (
-    <Card className="border-border bg-card/50">
+    <Card className="border-border bg-card/40">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" aria-hidden />

@@ -12,7 +12,10 @@ import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
+import { friendlyApiMessage } from "@/lib/friendly-api-message";
+import { ErrorBanner } from "@/components/error-banner";
+import { PageMain } from "@/components/page-main";
 import { useAuth } from "@/lib/auth-context";
 import { qualifiedTableName } from "@/components/schema-explorer/schema-table-sidebar";
 import { MessageSquareText } from "lucide-react";
@@ -65,8 +68,8 @@ export default function AppAskPage() {
         }
         return rows.find((r) => r.isActive)?.id ?? "";
       });
-    } catch {
-      setConnectionsError("Could not load database connections.");
+    } catch (e) {
+      setConnectionsError(friendlyApiMessage(e, "Database connections could not be loaded."));
     } finally {
       setConnectionsLoading(false);
     }
@@ -128,7 +131,7 @@ export default function AppAskPage() {
         setSql("");
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not generate SQL.");
+      setError(friendlyApiMessage(err, "Could not generate SQL from your question."));
     } finally {
       setBusy(null);
     }
@@ -159,7 +162,7 @@ export default function AppAskPage() {
       setResult(res);
     } catch (err) {
       setResult(null);
-      setError(err instanceof ApiError ? err.message : "Query failed to run.");
+      setError(friendlyApiMessage(err, "The query could not be run."));
     } finally {
       setBusy(null);
     }
@@ -171,19 +174,13 @@ export default function AppAskPage() {
         title="Ask a question"
         subtitle="Describe what you want in plain language, review the SQL, then run a read-only query against your data."
       />
-      <main className="flex flex-1 flex-col gap-6 p-6 md:p-8">
-        {error ? (
-          <p className="rounded-md border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">{error}</p>
-        ) : null}
+      <PageMain gapClassName="gap-6">
+        {error ? <ErrorBanner message={error} /> : null}
 
         {!token ? (
           <EmptyState title="Sign in required" description="Sign in to generate and run queries." />
         ) : connectionsError ? (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardContent className="py-6">
-              <p className="text-sm text-red-200">{connectionsError}</p>
-            </CardContent>
-          </Card>
+          <ErrorBanner message={connectionsError} />
         ) : connectionsLoading && !connections.length ? (
           <Card>
             <CardContent className="flex justify-center py-16">
@@ -317,10 +314,10 @@ export default function AppAskPage() {
               </Card>
             </div>
 
-            <Card className="border-border bg-card/40">
+            <Card className="border-border bg-card/40 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg">Results</CardTitle>
-                <CardDescription>Table, automatic chart, and a short narrative summary.</CardDescription>
+                <CardDescription>Table, suggested chart, and a short narrative you can share as-is.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {result ? (
@@ -354,7 +351,7 @@ export default function AppAskPage() {
             </Card>
           </div>
         )}
-      </main>
+      </PageMain>
       {token && connectionId ? (
         <>
           <SaveQueryModal

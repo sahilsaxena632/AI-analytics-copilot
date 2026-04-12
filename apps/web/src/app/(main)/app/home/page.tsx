@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { InsightCard } from "@/components/insight-card";
+import { PageMain } from "@/components/page-main";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -10,41 +11,44 @@ export default function AppHomePage() {
     <>
       <AppHeader
         title="Home"
-        subtitle="Connect a database, explore schema, and run read-only analytics queries."
+        subtitle="Connect your warehouse, explore what’s inside, and get answers with read-only analytics."
       />
-      <main className="flex flex-1 flex-col gap-8 p-8">
+      <PageMain>
         <div className="grid gap-4 md:grid-cols-3">
           <InsightCard
-            title="MVP flow"
-            description="End-to-end path is wired on Ask query"
-            value="Connect → Schema → Ask → Run"
+            title="Typical flow"
+            description="From connection to answers in a few guided steps"
+            value="Connect → Explore → Ask → Run"
           />
           <InsightCard
-            title="Security"
-            description="Execution path enforces SELECT / WITH only"
+            title="Safe by design"
+            description="Queries are checked before they reach your database"
             value="Read-only SQL"
           />
           <InsightCard
-            title="Next"
-            description="Swap rule-based SQL for an LLM behind the same API"
-            value="Generator service"
+            title="Share what matters"
+            description="Save questions, revisit history, pin views to dashboards"
+            value="Save · History · Dashboards"
           />
         </div>
-        <Card>
+        <Card className="border-border bg-card/40 shadow-sm">
           <CardHeader>
             <CardTitle>Get started</CardTitle>
-            <CardDescription>Use seed credentials or register a new organization.</CardDescription>
+            <CardDescription>Add a database your team already uses, then try a question on sample or real data.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
             <Link href="/onboarding/connect-database" className={cn(buttonVariants())}>
               Connect database
             </Link>
             <Link href="/app/ask" className={cn(buttonVariants({ variant: "secondary" }))}>
-              Open Ask query
+              Ask a question
+            </Link>
+            <Link href="/app/schema" className={cn(buttonVariants({ variant: "secondary" }))}>
+              Browse schema
             </Link>
           </CardContent>
         </Card>
-      </main>
+      </PageMain>
     </>
   );
 }

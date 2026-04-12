@@ -33,9 +33,11 @@ export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | nul
   const kind = inferChartKind(result);
   if (kind === "none") {
     return (
-      <p className="text-sm text-muted">
-        Chart preview is not shown for this result shape. The table above has the full detail.
-      </p>
+      <Card className="border-dashed border-border bg-card/30">
+        <CardContent className="py-6 text-sm leading-relaxed text-muted">
+          This result works best as a table. Use the results grid above for the full view.
+        </CardContent>
+      </Card>
     );
   }
   if (kind === "kpi") {
@@ -59,7 +61,11 @@ export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | nul
   }
   const series = pickChartSeries(result, kind);
   if (!series) {
-    return <p className="text-sm text-muted">Could not pick X/Y columns for a chart.</p>;
+    return (
+      <Card className="border-dashed border-border bg-card/30">
+        <CardContent className="py-6 text-sm text-muted">We couldn’t pick sensible columns for a quick chart.</CardContent>
+      </Card>
+    );
   }
   const { xKey, yKey } = series;
   const data = result.rows.map((row, i) => ({
@@ -99,16 +105,21 @@ export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | nul
     );
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted">
-        {kind === "line" ? "Line view (time-style column + measure)" : "Bar view (category + measure)"}
-      </p>
-      <div className="h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          {ChartBody}
-        </ResponsiveContainer>
-      </div>
-    </div>
+    <Card className="border-border bg-card/40">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Chart</CardTitle>
+        <CardDescription>
+          {kind === "line" ? "Trend-style view from your time column and main number." : "Comparison across categories."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            {ChartBody}
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
