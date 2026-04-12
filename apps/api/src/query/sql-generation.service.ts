@@ -35,55 +35,147 @@ export class SqlGenerationService {
       };
     }
 
+    const narrow = narrowWorkingTables(tables, dto);
+    if (narrow.error) {
+      return narrow.error;
+    }
+    const working = narrow.working;
+
     const q = `${dto.question} ${dto.schemaContext ?? ""}`.trim();
     const normalized = q.toLowerCase();
 
-    let selected: TableModel | null = null;
-    if (dto.selectedTable?.trim()) {
-      try {
-        const id = assertSafeTableIdentifier(dto.selectedTable.trim());
-        selected =
-          tables.find((t) => t.tableName === id.table && (!id.schema || t.tableSchema === id.schema)) ?? null;
-        if (!selected) {
-          return {
-            status: "needs_clarification",
-            generatedSql: null,
-            explanation: `The table "${dto.selectedTable}" was not found in the live schema for this connection.`,
-            suggestedTables: suggestTables(tables),
-          };
-        }
-      } catch {
-        return {
-          status: "needs_clarification",
-          generatedSql: null,
-          explanation: "The selected table name is not in a safe format. Use schema.table or a single identifier.",
-          suggestedTables: suggestTables(tables),
-        };
+    const matchedByQuestion = resolveTableFromQuestion(normalized, working);
+    let selected: TableModel | null = matchedByQuestion;
+    if (!selected) {
+      if (working.length === 1) {
+        selected = working[0];
+      } else if (working.length > 1) {
+        selected = working[0];
       }
     }
 
-    const resolved = selected ?? resolveTableFromQuestion(normalized, tables);
-    if (!resolved) {
+    if (!selected) {
       return {
         status: "needs_clarification",
         generatedSql: null,
         explanation:
           "Say which table to use (for example pick one in the UI), or name a table in your question. Here are some tables we can see:",
-        suggestedTables: suggestTables(tables),
+        suggestedTables: suggestTables(working),
       };
     }
 
-    const quoted = quoteTable(dialect, resolved.tableSchema, resolved.tableName);
-    const intent = detectIntent(normalized, resolved);
+    const quoted = quoteTable(dialect, selected.tableSchema, selected.tableName);
+    const intent = detectIntent(normalized, selected);
 
-    const out = buildSql(dialect, quoted, resolved, intent);
+    const out = buildSql(dialect, quoted, selected, intent);
+    let explanation = out.explanation;
+
+    const userNarrowed =
+      (dto.selectedTables && dto.selectedTables.filter((s) => s && String(s).trim()).length > 0) ||
+      Boolean(dto.selectedTable?.trim());
+    if (userNarrowed && working.length > 1) {
+      const scope = working.map((t) => `${t.tableSchema}.${t.tableName}`).join(", ");
+      if (matchedByQuestion) {
+        explanation += ` Context tables: ${scope}.`;
+      } else {
+        explanation += ` From your selection (${scope}), focusing on ${selected.tableSchema}.${selected.tableName}. Mention another table name in your question to switch focus.`;
+      }
+    }
+
     return {
       status: "ok",
       generatedSql: out.sql,
-      explanation: out.explanation,
+      explanation,
       confidence: out.confidence,
     };
   }
+}
+
+function narrowWorkingTables(
+  allTables: TableModel[],
+  dto: GenerateSqlDto,
+): { working: TableModel[]; error: GenerateSqlResponseDto | null } {
+  const multi = dto.selectedTables?.map((s) => String(s).trim()).filter(Boolean) ?? [];
+  if (multi.length > 0) {
+    const seen = new Set<string>();
+    const working: TableModel[] = [];
+    const invalid: string[] = [];
+    for (const raw of multi) {
+      let id: ReturnType<typeof assertSafeTableIdentifier>;
+      try {
+        id = assertSafeTableIdentifier(raw);
+      } catch {
+        invalid.push(raw);
+        continue;
+      }
+      const found =
+        allTables.find((tb) => tb.tableName === id.table && (!id.schema || tb.tableSchema === id.schema)) ?? null;
+      if (!found) {
+        invalid.push(raw);
+        continue;
+      }
+      const key = `${found.tableSchema}\0${found.tableName}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        working.push(found);
+      }
+    }
+    if (invalid.length) {
+      return {
+        working: [],
+        error: {
+          status: "needs_clarification",
+          generatedSql: null,
+          explanation: `Some table names were not found or are not in a safe format: ${invalid.slice(0, 6).join(", ")}${invalid.length > 6 ? "…" : ""}.`,
+          suggestedTables: suggestTables(allTables),
+        },
+      };
+    }
+    if (working.length === 0) {
+      return {
+        working: [],
+        error: {
+          status: "needs_clarification",
+          generatedSql: null,
+          explanation: "Choose at least one visible table from your connection.",
+          suggestedTables: suggestTables(allTables),
+        },
+      };
+    }
+    return { working, error: null };
+  }
+
+  if (dto.selectedTable?.trim()) {
+    try {
+      const id = assertSafeTableIdentifier(dto.selectedTable.trim());
+      const selected =
+        allTables.find((t) => t.tableName === id.table && (!id.schema || t.tableSchema === id.schema)) ?? null;
+      if (!selected) {
+        return {
+          working: [],
+          error: {
+            status: "needs_clarification",
+            generatedSql: null,
+            explanation: `The table "${dto.selectedTable}" was not found in the live schema for this connection.`,
+            suggestedTables: suggestTables(allTables),
+          },
+        };
+      }
+      return { working: [selected], error: null };
+    } catch {
+      return {
+        working: [],
+        error: {
+          status: "needs_clarification",
+          generatedSql: null,
+          explanation: "The selected table name is not in a safe format. Use schema.table or a single identifier.",
+          suggestedTables: suggestTables(allTables),
+        },
+      };
+    }
+  }
+
+  return { working: allTables, error: null };
 }
 
 function suggestTables(tables: TableModel[]): string[] {

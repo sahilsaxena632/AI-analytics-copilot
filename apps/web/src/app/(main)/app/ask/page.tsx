@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { GenerateSqlResponseDto, QueryExecuteResultDto, SchemaExplorerSchemaDto } from "@analytics-copilot/shared";
+import type {
+  GenerateSqlRequestDto,
+  GenerateSqlResponseDto,
+  QueryExecuteResultDto,
+  SchemaExplorerSchemaDto,
+} from "@analytics-copilot/shared";
 import { AppHeader } from "@/components/app-header";
 import { DataTable } from "@/components/data-table";
 import { QueryAutoChart } from "@/components/query-auto-chart";
@@ -18,7 +23,8 @@ import { ErrorBanner } from "@/components/error-banner";
 import { PageMain } from "@/components/page-main";
 import { useAuth } from "@/lib/auth-context";
 import { qualifiedTableName } from "@/components/schema-explorer/schema-table-sidebar";
-import { MessageSquareText } from "lucide-react";
+import { AskTableContextPicker } from "@/components/ask-table-context-picker";
+import { MessageSquareText, X } from "lucide-react";
 import { SaveQueryModal, AddToDashboardModal } from "@/components/query-workspace-modals";
 import { inferDashboardCardChartType } from "@/lib/query-result-heuristics";
 
@@ -39,7 +45,7 @@ export default function AppAskPage() {
   const [connectionId, setConnectionId] = useState("");
   const [schema, setSchema] = useState<SchemaExplorerSchemaDto | null>(null);
   const [schemaLoading, setSchemaLoading] = useState(false);
-  const [selectedTable, setSelectedTable] = useState("");
+  const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const [schemaContext, setSchemaContext] = useState("");
   const [question, setQuestion] = useState("");
   const [generateRes, setGenerateRes] = useState<GenerateSqlResponseDto | null>(null);
@@ -105,6 +111,14 @@ export default function AppAskPage() {
     }
   }, [token, connectionId, loadSchema]);
 
+  useEffect(() => {
+    if (!schema?.tables.length) {
+      return;
+    }
+    const valid = new Set(schema.tables.map((t) => qualifiedTableName(t)));
+    setSelectedTables((prev) => prev.filter((q) => valid.has(q)));
+  }, [schema]);
+
   async function onGenerate() {
     if (!token || !connectionId || !question.trim()) {
       return;
@@ -120,9 +134,9 @@ export default function AppAskPage() {
         body: JSON.stringify({
           databaseConnectionId: connectionId,
           question: question.trim(),
-          ...(selectedTable ? { selectedTable } : {}),
+          ...(selectedTables.length > 0 ? { selectedTables } : {}),
           ...(schemaContext.trim() ? { schemaContext: schemaContext.trim() } : {}),
-        }),
+        } satisfies GenerateSqlRequestDto),
       });
       setGenerateRes(res);
       if (res.status === "ok" && res.generatedSql) {
@@ -209,7 +223,7 @@ export default function AppAskPage() {
                       value={connectionId}
                       onChange={(e) => {
                         setConnectionId(e.target.value);
-                        setSelectedTable("");
+                        setSelectedTables([]);
                         setGenerateRes(null);
                         setResult(null);
                         setSavedQueryId(null);
@@ -222,25 +236,41 @@ export default function AppAskPage() {
                       ))}
                     </select>
                   </FormField>
-                  <FormField label="Focus table (optional)" id="tbl">
-                    <select
-                      id="tbl"
-                      className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
-                      value={selectedTable}
-                      onChange={(e) => setSelectedTable(e.target.value)}
+                  <FormField label="Table context (optional)" id="tbl-ctx" hint="Pick tables to narrow what the generator considers.">
+                    <AskTableContextPicker
+                      tables={schema?.tables ?? []}
+                      selectedQualified={selectedTables}
+                      onSelectionChange={setSelectedTables}
                       disabled={schemaLoading || !schema?.tables.length}
-                    >
-                      <option value="">Let the app infer from your question</option>
-                      {schema?.tables.map((t) => {
-                        const q = qualifiedTableName(t);
-                        return (
-                          <option key={q} value={q}>
-                            {q}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    />
                   </FormField>
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted">Active context</p>
+                    <div className="flex min-h-[36px] flex-wrap items-center gap-2">
+                      {selectedTables.length === 0 ? (
+                        <span className="inline-flex items-center rounded-full border border-border/70 bg-background/50 px-3 py-1 text-xs text-muted">
+                          Using full schema
+                        </span>
+                      ) : (
+                        selectedTables.map((q) => (
+                          <span
+                            key={q}
+                            className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/35 bg-primary/12 pl-2.5 pr-1 py-0.5 text-xs font-medium text-foreground"
+                          >
+                            <span className="max-w-[220px] truncate font-mono">{q}</span>
+                            <button
+                              type="button"
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-background/80 hover:text-foreground"
+                              aria-label={`Remove ${q} from context`}
+                              onClick={() => setSelectedTables((prev) => prev.filter((x) => x !== q))}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
                   <FormField label="Your question" id="q">
                     <Textarea
                       id="q"

@@ -55,6 +55,17 @@ export type GenerateSqlStatus = "ok" | "needs_clarification";
 
 export type SqlGenerationConfidence = "low" | "medium" | "high";
 
+/** Request body for POST /queries/generate-sql. */
+export interface GenerateSqlRequestDto {
+  databaseConnectionId: string;
+  question: string;
+  /** Qualified names (`schema.table`). When empty or omitted, the full live schema is used. */
+  selectedTables?: string[];
+  /** @deprecated Prefer `selectedTables` with one entry. */
+  selectedTable?: string;
+  schemaContext?: string;
+}
+
 /** Response from POST /queries/generate-sql (LLM-ready contract). */
 export interface GenerateSqlResponseDto {
   status: GenerateSqlStatus;
