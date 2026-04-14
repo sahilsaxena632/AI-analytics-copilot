@@ -126,4 +126,23 @@ export interface DashboardCardDto {
   connectionId: string;
   createdAt: string;
   updatedAt: string;
+  /** Grid column (0-based), 12-column dashboard grid. */
+  x: number;
+  /** Grid row (0-based). */
+  y: number;
+  /** Width in grid columns. */
+  w: number;
+  /** Height in grid row units. */
+  h: number;
+}
+
+/** Request body for PATCH /dashboards/:id/layout */
+export interface SaveDashboardLayoutRequestDto {
+  items: Array<{
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }>;
 }

@@ -148,6 +148,14 @@ model DashboardCard {
   title        String
   chartType    String
   sqlText      String
+  /// react-grid-layout x (columns), 0-based.
+  layoutX      Int      @default(0)
+  /// react-grid-layout y (rows), 0-based.
+  layoutY      Int      @default(0)
+  /// Width in grid columns (dashboard uses 12 columns).
+  layoutW      Int      @default(6)
+  /// Height in grid row units.
+  layoutH      Int      @default(6)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

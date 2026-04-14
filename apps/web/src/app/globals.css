@@ -16,3 +16,11 @@
 body {
   @apply bg-background text-foreground antialiased;
 }
+
+/* react-grid-layout: softer placeholder while editing dashboards */
+.dashboard-grid-canvas .react-grid-item.react-grid-placeholder {
+  background: hsl(var(--primary) / 0.12) !important;
+  border-radius: var(--radius);
+  border: 1px dashed hsl(var(--primary) / 0.35);
+  opacity: 1 !important;
+}

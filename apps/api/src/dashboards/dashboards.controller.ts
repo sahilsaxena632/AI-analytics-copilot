@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { DashboardsService } from "./dashboards.service";
 import { CreateDashboardDto } from "./dto/create-dashboard.dto";
 import { CreateDashboardCardDto } from "./dto/create-dashboard-card.dto";
+import { UpdateDashboardLayoutDto } from "./dto/update-dashboard-layout.dto";
 import { CurrentUser, type AuthUserPayload } from "../common/decorators/current-user.decorator";
 
 @Controller("dashboards")
@@ -18,6 +19,15 @@ export class DashboardsController {
   @Post()
   create(@CurrentUser() user: AuthUserPayload, @Body() dto: CreateDashboardDto) {
     return this.dashboards.create(user.organizationId, dto);
+  }
+
+  @Patch(":id/layout")
+  updateLayout(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthUserPayload,
+    @Body() dto: UpdateDashboardLayoutDto,
+  ) {
+    return this.dashboards.updateLayout(id, user.organizationId, dto.items);
   }
 
   @Get(":id")
