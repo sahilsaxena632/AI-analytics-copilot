@@ -27,8 +27,17 @@ function toNumber(v: unknown): number | null {
 }
 
 export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | null }) {
-  if (!result || result.rows.length === 0) {
+  if (!result) {
     return null;
+  }
+  if (result.rows.length === 0) {
+    return (
+      <Card className="border-dashed border-border bg-card/30">
+        <CardContent className="py-6 text-sm leading-relaxed text-muted">
+          There are no rows to chart for this result.
+        </CardContent>
+      </Card>
+    );
   }
   const kind = inferChartKind(result);
   if (kind === "none") {
@@ -105,15 +114,15 @@ export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | nul
     );
 
   return (
-    <Card className="border-border bg-card/40">
+    <Card className="flex h-full flex-col border-border bg-card/40">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Chart</CardTitle>
         <CardDescription>
           {kind === "line" ? "Trend-style view from your time column and main number." : "Comparison across categories."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-72 w-full">
+      <CardContent className="flex min-h-0 flex-1 flex-col">
+        <div className="h-full min-h-[240px] w-full flex-1">
           <ResponsiveContainer width="100%" height="100%">
             {ChartBody}
           </ResponsiveContainer>

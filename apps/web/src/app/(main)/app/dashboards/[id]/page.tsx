@@ -20,6 +20,7 @@ import {
   cardsToLayout,
   cloneLayout,
   layoutToSavePayload,
+  normalizeLayout,
   sortCardIdsByLayout,
 } from "@/components/dashboard/dashboard-layout-utils";
 import { useMinWidth } from "@/components/dashboard/use-min-width";
@@ -45,6 +46,44 @@ type SafeConnection = {
   type: "postgres" | "mysql";
 };
 
+const DASHBOARD_GRID_ROW_HEIGHT_PX = 40;
+const DASHBOARD_GRID_MARGIN_Y_PX = 12;
+const DASHBOARD_CARD_MIN_H = 4;
+
+function contentHeightToGridRows(heightPx: number): number {
+  if (!Number.isFinite(heightPx) || heightPx <= 0) {
+    return DASHBOARD_CARD_MIN_H;
+  }
+  return Math.max(
+    DASHBOARD_CARD_MIN_H,
+    Math.ceil((heightPx + DASHBOARD_GRID_MARGIN_Y_PX) / (DASHBOARD_GRID_ROW_HEIGHT_PX + DASHBOARD_GRID_MARGIN_Y_PX)),
+  );
+}
+
+function sameLayoutGeometry(a: Layout, b: Layout): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let idx = 0; idx < a.length; idx++) {
+    const left = a[idx];
+    const right = b[idx];
+    if (
+      !left ||
+      !right ||
+      left.i !== right.i ||
+      left.x !== right.x ||
+      left.y !== right.y ||
+      left.w !== right.w ||
+      left.h !== right.h
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export default function AppDashboardDetailPage() {
   const params = useParams();
   const id = String(params.id ?? "");
@@ -61,11 +100,13 @@ export default function AppDashboardDetailPage() {
   const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
 
   const [layoutEditMode, setLayoutEditMode] = useState(false);
+  const [savedLayout, setSavedLayout] = useState<Layout>([]);
   const [draftLayout, setDraftLayout] = useState<Layout>([]);
   const [chartReflowKey, setChartReflowKey] = useState(0);
 
   useEffect(() => {
     setLayoutEditMode(false);
+    setSavedLayout([]);
     setDraftLayout([]);
     setPreview({});
     setPreviewErrors({});
@@ -86,6 +127,9 @@ export default function AppDashboardDetailPage() {
       .then(([dash, conns]) => {
         setData(dash);
         setConnections(conns);
+        // Initialize stable saved layout from API once per load.
+        const ids = dash.cards.map((c) => c.id);
+        setSavedLayout(normalizeLayout(cardsToLayout(dash.cards), ids));
       })
       .catch((e) => setError(friendlyApiMessage(e, "This dashboard could not be loaded.")))
       .finally(() => setLoading(false));
@@ -110,18 +154,18 @@ export default function AppDashboardDetailPage() {
     return m;
   }, [data]);
 
-  const serverLayout = useMemo(() => (data ? cardsToLayout(data.cards) : []), [data]);
+  const cardIds = useMemo(() => (data ? data.cards.map((c) => c.id) : []), [data]);
 
-  const activeLayout = layoutEditMode ? draftLayout : serverLayout;
+  const activeLayout = layoutEditMode ? draftLayout : savedLayout;
 
   const layoutDirty = useMemo(() => {
     if (!layoutEditMode || !data?.cards.length) {
       return false;
     }
     return (
-      JSON.stringify(layoutToSavePayload(draftLayout)) !== JSON.stringify(layoutToSavePayload(serverLayout))
+      JSON.stringify(layoutToSavePayload(draftLayout)) !== JSON.stringify(layoutToSavePayload(savedLayout))
     );
-  }, [layoutEditMode, draftLayout, serverLayout, data?.cards.length]);
+  }, [layoutEditMode, draftLayout, savedLayout, data?.cards.length]);
 
   useEffect(() => {
     if (!layoutDirty || !layoutEditMode) {
@@ -166,9 +210,10 @@ export default function AppDashboardDetailPage() {
 
   const enterLayoutEdit = useCallback(() => {
     setLayoutError(null);
-    setDraftLayout(cloneLayout(serverLayout));
+    // Normalize once when edit starts to keep render path stable.
+    setDraftLayout(cloneLayout(normalizeLayout(savedLayout, cardIds)));
     setLayoutEditMode(true);
-  }, [serverLayout]);
+  }, [savedLayout, cardIds]);
 
   const cancelLayoutEdit = useCallback(() => {
     if (layoutDirty) {
@@ -185,8 +230,8 @@ export default function AppDashboardDetailPage() {
     if (!data?.cards.length) {
       return;
     }
-    setDraftLayout(buildDefaultStackedLayout(data.cards.map((c) => c.id)));
-  }, [data?.cards]);
+    setDraftLayout(buildDefaultStackedLayout(cardIds));
+  }, [data?.cards, cardIds]);
 
   const saveLayout = useCallback(async () => {
     if (!token || !id || !data?.cards.length) {
@@ -202,6 +247,8 @@ export default function AppDashboardDetailPage() {
         body: JSON.stringify(body),
       });
       setData(updated);
+      const ids = updated.cards.map((c) => c.id);
+      setSavedLayout(normalizeLayout(cardsToLayout(updated.cards), ids));
       setLayoutEditMode(false);
     } catch (e) {
       setLayoutError(friendlyApiMessage(e, "We couldn’t save this layout. Try again in a moment."));
@@ -213,6 +260,34 @@ export default function AppDashboardDetailPage() {
   const bumpChartReflow = useCallback(() => {
     setChartReflowKey((k) => k + 1);
   }, []);
+
+  const updateCardContentHeight = useCallback(
+    (cardId: string, heightPx: number) => {
+      if (!wideLayout) {
+        return;
+      }
+
+      const nextH = contentHeightToGridRows(heightPx);
+      const updateLayout = (layout: Layout): Layout => {
+        let changed = false;
+        const next = layout.map((item) => {
+          if (item.i !== cardId || item.h === nextH) {
+            return item;
+          }
+          changed = true;
+          return { ...item, h: nextH };
+        });
+        return changed ? next : layout;
+      };
+
+      if (layoutEditMode) {
+        setDraftLayout(updateLayout);
+      } else {
+        setSavedLayout(updateLayout);
+      }
+    },
+    [layoutEditMode, wideLayout],
+  );
 
   const orderedCardIds = useMemo(() => sortCardIdsByLayout(activeLayout), [activeLayout]);
 
@@ -277,10 +352,11 @@ export default function AppDashboardDetailPage() {
           previewError={previewErrors[c.id]}
           chartReflowKey={chartReflowKey}
           onRefresh={() => void runPreview(c.id, c.connectionId, c.sqlText)}
+          onContentHeightChange={updateCardContentHeight}
         />
       );
     },
-    [cardMap, connMap, preview, previewErrors, layoutEditMode, chartReflowKey, runPreview],
+    [cardMap, connMap, preview, previewErrors, layoutEditMode, chartReflowKey, runPreview, updateCardContentHeight],
   );
 
   return (
@@ -304,11 +380,12 @@ export default function AppDashboardDetailPage() {
               <DashboardGridCanvas
                 layout={activeLayout}
                 editMode={layoutEditMode}
-                cardIds={orderedCardIds}
+                cardIds={cardIds}
                 renderCard={renderCard}
                 onLayoutChange={(next) => {
+                  const nextLayout = cloneLayout(next);
                   if (layoutEditMode) {
-                    setDraftLayout(next);
+                    setDraftLayout((current) => (sameLayoutGeometry(current, nextLayout) ? current : nextLayout));
                   }
                 }}
                 onLayoutInteractionEnd={bumpChartReflow}

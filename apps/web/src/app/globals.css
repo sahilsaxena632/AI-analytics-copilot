@@ -13,6 +13,36 @@
   --radius: 0.65rem;
 }
 
+[data-theme="dark"] {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 40% 10%;
+  --muted: 215 20% 65%;
+  --border: 217 19% 20%;
+  --primary: 217 91% 60%;
+  --accent: 262 83% 58%;
+}
+
+[data-theme="light"] {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --muted: 215 16% 42%;
+  --border: 214 32% 88%;
+  --primary: 221 83% 53%;
+  --accent: 262 74% 58%;
+}
+
+[data-theme="green"] {
+  --background: 146 40% 8%;
+  --foreground: 140 40% 95%;
+  --card: 146 35% 12%;
+  --muted: 145 18% 70%;
+  --border: 148 20% 24%;
+  --primary: 147 68% 44%;
+  --accent: 167 80% 40%;
+}
+
 body {
   @apply bg-background text-foreground antialiased;
 }
@@ -23,4 +53,37 @@ body {
   border-radius: var(--radius);
   border: 1px dashed hsl(var(--primary) / 0.35);
   opacity: 1 !important;
+}
+
+.dashboard-grid-canvas {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.dashboard-grid-canvas .layout {
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-grid-canvas .react-grid-item {
+  overflow: hidden !important;
+}
+
+.dashboard-grid-canvas .react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  right: 0;
+  bottom: 0;
+  background: hsl(var(--primary) / 0.45);
+  z-index: 50;
+  cursor: se-resize;
+  pointer-events: all;
+  opacity: 1;
+  border-radius: 3px 0 0 0;
+}
+
+.dashboard-grid-canvas--edit .react-grid-item > .react-resizable-handle {
+  opacity: 1;
 }

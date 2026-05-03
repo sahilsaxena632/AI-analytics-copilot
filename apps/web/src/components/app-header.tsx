@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useTheme, type AppTheme } from "@/lib/theme-context";
 
 export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   const { user, clearSession } = useAuth();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   return (
@@ -16,6 +18,19 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
         {subtitle ? <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">{subtitle}</p> : null}
       </div>
       <div className="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+        <label className="text-xs text-muted">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted/80">Theme</span>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as AppTheme)}
+            className="rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Select theme"
+          >
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="green">Green</option>
+          </select>
+        </label>
         <div className="text-left text-xs text-muted sm:text-right">
           <p className="text-[11px] uppercase tracking-wide text-muted/80">Signed in</p>
           <p className="truncate font-medium text-foreground sm:max-w-[220px]" title={user?.email ?? undefined}>
