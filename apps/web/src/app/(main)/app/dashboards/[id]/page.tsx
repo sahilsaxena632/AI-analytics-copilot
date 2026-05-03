@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { Layout } from "react-grid-layout/legacy";
 import type { DashboardCardDto, QueryExecuteResultDto, SaveDashboardLayoutRequestDto } from "@analytics-copilot/shared";
@@ -103,6 +103,7 @@ export default function AppDashboardDetailPage() {
   const [savedLayout, setSavedLayout] = useState<Layout>([]);
   const [draftLayout, setDraftLayout] = useState<Layout>([]);
   const [chartReflowKey, setChartReflowKey] = useState(0);
+  const autoPreviewRequestedRef = useRef(new Set<string>());
 
   useEffect(() => {
     setLayoutEditMode(false);
@@ -111,6 +112,7 @@ export default function AppDashboardDetailPage() {
     setPreview({});
     setPreviewErrors({});
     setLayoutError(null);
+    autoPreviewRequestedRef.current.clear();
   }, [id]);
 
   useEffect(() => {
@@ -207,6 +209,19 @@ export default function AppDashboardDetailPage() {
     },
     [token],
   );
+
+  useEffect(() => {
+    if (!data?.cards.length) {
+      return;
+    }
+
+    for (const card of data.cards) {
+      if (preview[card.id] === undefined && !autoPreviewRequestedRef.current.has(card.id)) {
+        autoPreviewRequestedRef.current.add(card.id);
+        void runPreview(card.id, card.connectionId, card.sqlText);
+      }
+    }
+  }, [data?.cards, preview, runPreview]);
 
   const enterLayoutEdit = useCallback(() => {
     setLayoutError(null);

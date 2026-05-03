@@ -71,7 +71,7 @@ function getKpiSummary(
     return { value: "Preview unavailable", label: previewError ?? "Refresh to try again" };
   }
   if (!preview) {
-    return { value: "Not loaded", label: "Load preview to show this KPI" };
+    return { value: "Loading...", label: "Preparing this KPI" };
   }
   if (preview.rows.length === 0) {
     return { value: "No rows", label: "This query returned no data" };
@@ -195,9 +195,10 @@ export function DashboardCardPanel({
             variant="secondary"
             size="sm"
             className="whitespace-nowrap"
+            disabled={preview === "loading"}
             onClick={() => void onRefresh()}
           >
-            {preview === "loading" ? "Loading..." : hasResult ? "Refresh" : "Load"}
+            {preview === "loading" || preview === undefined ? "Loading..." : preview === "error" ? "Retry" : "Refresh"}
           </Button>
         </div>
       </CardHeader>
@@ -241,7 +242,7 @@ export function DashboardCardPanel({
               </div>
             ) : (
               <p className="rounded-lg border border-dashed border-border/70 bg-card/20 px-3 py-4 text-sm text-muted">
-                Load preview to see supporting rows.
+                Preview data will appear here once it finishes loading.
               </p>
             )}
           </div>
