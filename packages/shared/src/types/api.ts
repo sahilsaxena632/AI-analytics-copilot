@@ -72,6 +72,18 @@ export interface GenerateSqlResponseDto {
   generatedSql: string | null;
   explanation: string;
   confidence?: SqlGenerationConfidence;
+  /** Model-reported confidence in [0, 1] when provided by the LLM path. */
+  confidenceScore?: number;
+  /** When the model or server asks the user for more specificity (mirrors `status === "needs_clarification"`). */
+  needsClarification?: boolean;
+  /** Short follow-up question for the user when clarification is required. */
+  clarificationQuestion?: string | null;
+  /** Qualified tables the model claims to have used (`schema.table`). */
+  usedTables?: string[];
+  /** Which LLM provider produced the successful parse (`gemini`, `groq`, or `none` if not applicable). */
+  providerUsed?: string;
+  /** When `generatedSql` was rejected by validation (unsafe or invalid shape). */
+  validationError?: string | null;
   /** When status is needs_clarification — table names the user can pick. */
   suggestedTables?: string[];
 }

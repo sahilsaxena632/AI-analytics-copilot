@@ -59,6 +59,17 @@ export default function AppAskPage() {
 
   const activeConnections = useMemo(() => connections.filter((c) => c.isActive), [connections]);
 
+  const showLowConfidenceWarning = useMemo(() => {
+    if (!generateRes || generateRes.status !== "ok") {
+      return false;
+    }
+    if (generateRes.confidence === "low") {
+      return true;
+    }
+    const s = generateRes.confidenceScore;
+    return typeof s === "number" && s < 0.55;
+  }, [generateRes]);
+
   const loadConnections = useCallback(async () => {
     if (!token) {
       return;
@@ -304,7 +315,13 @@ export default function AppAskPage() {
                   {generateRes?.status === "needs_clarification" ? (
                     <div className="rounded-md border border-amber-900/50 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
                       <p className="font-medium">Needs a bit more detail</p>
+                      {generateRes.clarificationQuestion ? (
+                        <p className="mt-2 font-medium text-amber-50">{generateRes.clarificationQuestion}</p>
+                      ) : null}
                       <p className="mt-1 text-amber-100/90">{generateRes.explanation}</p>
+                      {generateRes.validationError ? (
+                        <p className="mt-2 text-xs text-amber-200/90">Safety check: {generateRes.validationError}</p>
+                      ) : null}
                       {generateRes.suggestedTables?.length ? (
                         <p className="mt-2 text-xs text-amber-100/80">
                           Tables: {generateRes.suggestedTables.slice(0, 8).join(", ")}
@@ -313,11 +330,11 @@ export default function AppAskPage() {
                       ) : null}
                     </div>
                   ) : null}
-                  {generateRes?.status === "ok" ? (
-                    <p className="text-xs text-muted">
-                      {generateRes.confidence ? `Confidence: ${generateRes.confidence}. ` : null}
-                      {generateRes.explanation}
-                    </p>
+                  {generateRes?.status === "ok" && showLowConfidenceWarning ? (
+                    <div className="rounded-md border border-amber-800/40 bg-amber-950/25 px-3 py-2 text-xs text-amber-100">
+                      Low confidence from the model — review SQL carefully before running, or refine your question and
+                      table context.
+                    </div>
                   ) : null}
                 </CardContent>
               </Card>
@@ -337,6 +354,29 @@ export default function AppAskPage() {
                       spellCheck={false}
                     />
                   </FormField>
+                  {generateRes?.status === "ok" ? (
+                    <div className="rounded-md border border-border/80 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">Why this SQL was generated</p>
+                      <p className="mt-1.5 leading-relaxed text-foreground/90">{generateRes.explanation}</p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                        {generateRes.confidenceScore !== undefined ? (
+                          <span>
+                            Score: {(generateRes.confidenceScore * 100).toFixed(0)}%
+                            {generateRes.confidence ? ` (${generateRes.confidence})` : ""}
+                          </span>
+                        ) : generateRes.confidence ? (
+                          <span>Confidence: {generateRes.confidence}</span>
+                        ) : null}
+                        {generateRes.providerUsed ? <span>Provider: {generateRes.providerUsed}</span> : null}
+                      </div>
+                      {generateRes.usedTables?.length ? (
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          Tables referenced:{" "}
+                          <span className="font-mono text-foreground/80">{generateRes.usedTables.join(", ")}</span>
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <Button type="button" onClick={() => void onRun()} disabled={!!busy || !sql.trim()}>
                     {busy === "run" ? <LoadingState label="Running…" /> : "Run query"}
                   </Button>
