@@ -1,6 +1,8 @@
 import type { QueryExecuteResultDto } from "@analytics-copilot/shared";
+import { inferChartPlan, inferPrimaryTimeColumn, toNumber, type ChartKind } from "@/lib/chart-dataset-plan";
 
-export type ChartKind = "none" | "kpi" | "line" | "bar";
+export type { ChartKind, ChartPlan, ChartConfidence, ColumnProfile, ColumnRole } from "@/lib/chart-dataset-plan";
+export { inferChartPlan, buildColumnProfiles, inferPrimaryTimeColumn } from "@/lib/chart-dataset-plan";
 
 export type NumericStats = { column: string; min: number; max: number; sum: number; count: number };
 
@@ -11,34 +13,10 @@ export type InsightSummary = {
   trend?: "up" | "down" | "flat";
 };
 
-function toNumber(v: unknown): number | null {
-  if (typeof v === "number" && Number.isFinite(v)) {
-    return v;
-  }
-  if (typeof v === "string" && v.trim() !== "") {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-  return null;
-}
-
-function isLikelyDateColumn(name: string, sample: unknown): boolean {
-  if (/date|time|month|year|day|week|at$|_on$/i.test(name)) {
-    return true;
-  }
-  if (typeof sample === "string" && /^\d{4}-\d{2}-\d{2}/.test(sample)) {
-    return true;
-  }
-  if (sample instanceof Date || (typeof sample === "string" && !Number.isNaN(Date.parse(sample)))) {
-    return true;
-  }
-  return false;
-}
-
 /** Maps heuristic chart shape to dashboard card chart types. */
 export function inferDashboardCardChartType(result: QueryExecuteResultDto | null): "bar" | "line" | "table" {
-  const k = inferChartKind(result);
-  if (k === "line") {
+  const k = inferChartPlan(result).kind;
+  if (k === "line" || k === "line_multi") {
     return "line";
   }
   if (k === "bar") {
@@ -48,51 +26,7 @@ export function inferDashboardCardChartType(result: QueryExecuteResultDto | null
 }
 
 export function inferChartKind(result: QueryExecuteResultDto | null): ChartKind {
-  if (!result || result.rows.length === 0 || result.columns.length === 0) {
-    return "none";
-  }
-  if (result.rows.length === 1 && result.columns.length === 1) {
-    const v = toNumber(result.rows[0][result.columns[0]]);
-    if (v != null) {
-      return "kpi";
-    }
-  }
-  const sample = result.rows[0];
-  let timeCol: string | null = null;
-  let numCol: string | null = null;
-  for (const c of result.columns) {
-    const val = sample[c];
-    if (!timeCol && isLikelyDateColumn(c, val)) {
-      timeCol = c;
-    }
-    if (!numCol && toNumber(val) != null) {
-      numCol = c;
-    }
-  }
-  if (timeCol && numCol && result.rows.length >= 2) {
-    return "line";
-  }
-  let catCol: string | null = null;
-  for (const c of result.columns) {
-    if (c === numCol) {
-      continue;
-    }
-    const val = sample[c];
-    if (typeof val === "string" || val === null || typeof val === "number") {
-      const uniq = new Set(result.rows.map((r) => String(r[c] ?? "")));
-      if (uniq.size > 1 && uniq.size <= 24) {
-        catCol = c;
-        break;
-      }
-    }
-  }
-  if (catCol && numCol) {
-    return "bar";
-  }
-  if (numCol && result.columns.length >= 2) {
-    return "bar";
-  }
-  return "none";
+  return inferChartPlan(result).kind;
 }
 
 export function buildInsightSummary(result: QueryExecuteResultDto | null): InsightSummary | null {
@@ -122,7 +56,7 @@ export function buildInsightSummary(result: QueryExecuteResultDto | null): Insig
   }
 
   let trend: "up" | "down" | "flat" | undefined;
-  const timeCol = result.columns.find((c) => isLikelyDateColumn(c, result.rows[0][c]));
+  const timeCol = inferPrimaryTimeColumn(result);
   const measureCol = stats[0]?.column;
   if (timeCol && measureCol && result.rows.length >= 4) {
     const ordered = [...result.rows].sort((a, b) => {
@@ -181,28 +115,22 @@ function formatNum(n: number): string {
   return n.toFixed(2);
 }
 
-export function pickChartSeries(result: QueryExecuteResultDto, kind: ChartKind): { xKey: string; yKey: string } | null {
+export function pickChartSeries(
+  result: QueryExecuteResultDto,
+  kind: ChartKind,
+): { xKey: string; yKey: string; groupKey?: string | null } | null {
   if (kind === "none" || kind === "kpi") {
     return null;
   }
-  const sample = result.rows[0];
-  let xKey = result.columns.find((c) => isLikelyDateColumn(c, sample[c])) ?? null;
-  if (kind === "bar" && !xKey) {
-    xKey =
-      result.columns.find((c) => {
-        if (toNumber(sample[c]) != null) {
-          return false;
-        }
-        const uniq = new Set(result.rows.map((r) => String(r[c] ?? "")));
-        return uniq.size > 1 && uniq.size <= 32;
-      }) ?? result.columns[0];
-  }
-  const yKey =
-    result.columns.find((c) => c !== xKey && toNumber(sample[c]) != null) ??
-    result.columns.find((c) => toNumber(sample[c]) != null) ??
-    null;
-  if (!xKey || !yKey) {
+  const plan = inferChartPlan(result);
+  if (plan.kind === "none" || plan.kind === "kpi") {
     return null;
   }
-  return { xKey, yKey };
+  if (plan.kind !== kind) {
+    return null;
+  }
+  if (!plan.xKey || !plan.yKey) {
+    return null;
+  }
+  return { xKey: plan.xKey, yKey: plan.yKey, groupKey: plan.groupKey };
 }
