@@ -49,7 +49,7 @@ export default function SavedQueriesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {rows.map((q) => (
-              <Card key={q.id} className="border-border bg-card/40 shadow-sm transition-colors hover:border-primary/30">
+              <Card key={q.id} className="transition-colors hover:border-primary/30 hover:bg-card/80">
                 <CardHeader>
                   <CardTitle className="text-lg">
                     <Link href={`/queries/${q.id}`} className="hover:underline">
@@ -63,7 +63,7 @@ export default function SavedQueriesPage() {
                     })}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="line-clamp-3 font-mono text-xs leading-relaxed text-muted">{q.sqlText}</CardContent>
+                <CardContent className="line-clamp-3 font-mono text-xs leading-relaxed text-muted-foreground">{q.sqlText}</CardContent>
               </Card>
             ))}
           </div>

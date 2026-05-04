@@ -7,9 +7,12 @@
   --foreground: 210 40% 98%;
   --card: 222 40% 10%;
   --muted: 215 20% 65%;
+  --muted-foreground: 215 16% 72%;
   --border: 217 19% 20%;
   --primary: 217 91% 60%;
   --accent: 262 83% 58%;
+  --ring: 217 91% 60%;
+  --input: 217 19% 24%;
   --radius: 0.65rem;
 }
 
@@ -18,9 +21,12 @@
   --foreground: 210 40% 98%;
   --card: 222 40% 10%;
   --muted: 215 20% 65%;
+  --muted-foreground: 215 16% 72%;
   --border: 217 19% 20%;
   --primary: 217 91% 60%;
   --accent: 262 83% 58%;
+  --ring: 217 91% 60%;
+  --input: 217 19% 24%;
 }
 
 [data-theme="light"] {
@@ -28,9 +34,12 @@
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --muted: 215 16% 42%;
+  --muted-foreground: 215 16% 35%;
   --border: 214 32% 88%;
   --primary: 221 83% 53%;
   --accent: 262 74% 58%;
+  --ring: 221 83% 53%;
+  --input: 214 32% 84%;
 }
 
 [data-theme="green"] {
@@ -38,13 +47,36 @@
   --foreground: 140 40% 95%;
   --card: 146 35% 12%;
   --muted: 145 18% 70%;
+  --muted-foreground: 145 18% 76%;
   --border: 148 20% 24%;
   --primary: 147 68% 44%;
   --accent: 167 80% 40%;
+  --ring: 147 68% 44%;
+  --input: 148 20% 30%;
 }
 
 body {
   @apply bg-background text-foreground antialiased;
+}
+
+@layer base {
+  h1 {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  h2 {
+    @apply text-xl font-semibold tracking-tight text-foreground;
+  }
+
+  h3 {
+    @apply text-lg font-semibold tracking-tight text-foreground;
+  }
+}
+
+@layer components {
+  .control-base {
+    @apply h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
 }
 
 /* react-grid-layout: softer placeholder while editing dashboards */

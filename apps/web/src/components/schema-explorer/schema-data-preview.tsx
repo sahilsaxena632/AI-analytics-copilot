@@ -15,7 +15,7 @@ type Props = {
 
 export function SchemaDataPreview({ preview, loading, error, title = "Sample rows" }: Props) {
   return (
-    <Card className="border-border bg-card/40 shadow-sm">
+    <Card className="bg-card/75">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>
@@ -29,15 +29,18 @@ export function SchemaDataPreview({ preview, loading, error, title = "Sample row
             <LoadingState label="Loading sample rows…" />
           </div>
         ) : !preview || preview.columns.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">Select a table to preview rows.</p>
+          <p className="rounded-lg border border-dashed border-border/70 bg-background/25 py-6 text-center text-sm text-muted-foreground">
+            Select a table to preview rows.
+          </p>
         ) : (
           <>
             {preview.truncated ? (
-              <p className="mb-2 text-xs text-muted">Showing the first rows; more exist in this table.</p>
+              <p className="mb-2 text-xs text-muted-foreground">Showing the first rows; more exist in this table.</p>
             ) : null}
-            <div className="overflow-x-auto rounded-md border border-border">
-              <table className="w-full min-w-[480px] text-left text-sm">
-                <thead className="bg-muted/30 text-xs uppercase tracking-wide text-muted">
+            <div className="overflow-hidden rounded-lg border border-border/60 bg-background/25">
+              <div className="max-h-[420px] overflow-auto overscroll-contain">
+                <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+                  <thead className="sticky top-0 z-10 border-b border-border/50 bg-card/95 text-xs uppercase tracking-wide text-muted-foreground backdrop-blur-sm">
                   <tr>
                     {preview.columns.map((col) => (
                       <th key={col} className="whitespace-nowrap px-3 py-2 font-medium">
@@ -45,19 +48,24 @@ export function SchemaDataPreview({ preview, loading, error, title = "Sample row
                       </th>
                     ))}
                   </tr>
-                </thead>
-                <tbody>
-                  {preview.rows.map((row, ri) => (
-                    <tr key={ri} className="border-t border-border/60 odd:bg-background/30">
-                      {preview.columns.map((col) => (
-                        <td key={col} className="max-w-[240px] truncate px-3 py-2 text-muted" title={formatCellValue(row[col])}>
-                          {formatCellValue(row[col])}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {preview.rows.map((row, ri) => (
+                      <tr key={ri} className="even:bg-background/5">
+                        {preview.columns.map((col) => (
+                          <td
+                            key={col}
+                            className="max-w-[240px] truncate px-3 py-2.5 text-foreground/90"
+                            title={formatCellValue(row[col])}
+                          >
+                            {formatCellValue(row[col])}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}

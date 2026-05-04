@@ -153,7 +153,7 @@ export default function AppSchemaExplorerPage() {
         ) : connectionsError ? (
           <ErrorBanner message={connectionsError} />
         ) : connectionsLoading && connections.length === 0 ? (
-          <Card className="border-border bg-card/50">
+          <Card>
             <CardContent className="flex justify-center py-16">
               <LoadingState label="Loading connections…" />
             </CardContent>
@@ -166,19 +166,19 @@ export default function AppSchemaExplorerPage() {
           />
         ) : (
           <>
-            <Card className="border-border bg-card/50 shadow-sm">
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Connection</CardTitle>
                 <CardDescription>Choose which database to explore. Only active connections are listed.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-wrap items-end gap-4">
                 <div className="min-w-[220px] flex-1">
-                  <Label htmlFor="schema-conn" className="text-xs text-muted">
+                  <Label htmlFor="schema-conn" className="text-xs text-muted-foreground">
                     Database connection
                   </Label>
                   <select
                     id="schema-conn"
-                    className="mt-1.5 flex h-10 w-full max-w-md rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                    className="control-base mt-1.5 max-w-md"
                     value={connectionId}
                     onChange={(e) => handleConnectionChange(e.target.value)}
                   >
@@ -211,7 +211,7 @@ export default function AppSchemaExplorerPage() {
                 {!connectionId ? (
                   <EmptyState icon={Table2} title="Pick a connection" description="Select a database connection to load its schema." />
                 ) : schemaLoading && !schema ? (
-                  <Card className="flex flex-1 items-center justify-center border-border bg-card/40 py-20">
+                  <Card className="flex flex-1 items-center justify-center py-20">
                     <LoadingState label="Reading metadata from your database…" />
                   </Card>
                 ) : !selectedTable ? (

@@ -46,7 +46,7 @@ export function AskTableContextPicker({ tables, selectedQualified, onSelectionCh
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <Label htmlFor="tbl-search" className="text-xs text-muted">
+          <Label htmlFor="tbl-search" className="text-xs text-muted-foreground">
             Search tables
           </Label>
           <Input
@@ -64,7 +64,7 @@ export function AskTableContextPicker({ tables, selectedQualified, onSelectionCh
           type="button"
           variant="ghost"
           size="sm"
-          className="shrink-0 text-muted hover:text-foreground"
+          className="shrink-0 text-muted-foreground hover:text-foreground"
           disabled={disabled || selectedQualified.length === 0}
           onClick={() => onSelectionChange([])}
         >
@@ -73,14 +73,14 @@ export function AskTableContextPicker({ tables, selectedQualified, onSelectionCh
       </div>
       <div
         className={cn(
-          "max-h-52 overflow-y-auto rounded-md border border-border bg-background/40 p-2",
+          "max-h-52 overflow-y-auto rounded-md border border-border/70 bg-background/35 p-2",
           disabled && "pointer-events-none opacity-50",
         )}
         role="group"
         aria-label="Table context"
       >
         {filtered.length === 0 ? (
-          <p className="px-2 py-6 text-center text-xs text-muted">No tables match your search.</p>
+          <p className="px-2 py-6 text-center text-xs text-muted-foreground">No tables match your search.</p>
         ) : (
           <ul className="space-y-0.5">
             {filtered.map((t) => {
@@ -90,7 +90,7 @@ export function AskTableContextPicker({ tables, selectedQualified, onSelectionCh
                 <li key={q}>
                   <label
                     className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors hover:bg-card/80",
+                      "flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm transition-colors hover:bg-background/55",
                       checked && "bg-primary/10",
                     )}
                   >
@@ -109,7 +109,7 @@ export function AskTableContextPicker({ tables, selectedQualified, onSelectionCh
           </ul>
         )}
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-xs text-muted-foreground">
         Leave none checked to use the <span className="font-medium text-foreground/90">full schema</span>. Checking one or
         more tables limits suggestions to those tables only.
       </p>

@@ -129,7 +129,7 @@ export default function OnboardingConnectDatabasePage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Connect your database</h1>
-            <p className="text-sm text-muted">Sign in to add a secure, read-only analytics connection.</p>
+            <p className="text-sm text-muted-foreground">Sign in to add a secure, read-only analytics connection.</p>
           </div>
         </div>
         <Card className="border-border/80 bg-card/90 backdrop-blur">
@@ -150,7 +150,7 @@ export default function OnboardingConnectDatabasePage() {
           <Database className="h-7 w-7 text-primary" />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Connect your database</h1>
-        <p className="text-sm leading-relaxed text-muted">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Choose PostgreSQL or MySQL. We validate access with a quick check, then store credentials for read-only analytics—your
           operational data stays on your servers.
         </p>
@@ -179,7 +179,7 @@ export default function OnboardingConnectDatabasePage() {
                   onClick={() => setDbType("postgres")}
                   className={cn(
                     "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    dbType === "postgres" ? "bg-primary text-white shadow-sm" : "text-muted hover:text-foreground",
+                    dbType === "postgres" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   PostgreSQL
@@ -189,13 +189,13 @@ export default function OnboardingConnectDatabasePage() {
                   onClick={() => setDbType("mysql")}
                   className={cn(
                     "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    dbType === "mysql" ? "bg-primary text-white shadow-sm" : "text-muted hover:text-foreground",
+                    dbType === "mysql" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   MySQL
                 </button>
               </div>
-              <p className="text-xs text-muted">More engines (e.g. SQL Server) can plug in later via the same connection API.</p>
+              <p className="text-xs text-muted-foreground">More engines (e.g. SQL Server) can plug in later via the same connection API.</p>
             </div>
 
             <div className="space-y-2">
@@ -208,7 +208,7 @@ export default function OnboardingConnectDatabasePage() {
                 required
                 autoComplete="off"
               />
-              <p className="text-xs text-muted">A label your managers will recognize in menus and dashboards.</p>
+              <p className="text-xs text-muted-foreground">A label your managers will recognize in menus and dashboards.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -254,7 +254,7 @@ export default function OnboardingConnectDatabasePage() {
                 <Label htmlFor="ssl" className="text-foreground">
                   Use SSL
                 </Label>
-                <p className="text-xs text-muted">Turn on for managed cloud databases that require encryption.</p>
+                <p className="text-xs text-muted-foreground">Turn on for managed cloud databases that require encryption.</p>
               </div>
               <Switch id="ssl" checked={ssl} onCheckedChange={setSsl} />
             </div>
@@ -271,7 +271,7 @@ export default function OnboardingConnectDatabasePage() {
         </CardContent>
       </Card>
 
-      <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted">
+      <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden />
         <p>
           Analytics queries from this app are <span className="font-medium text-foreground">read-only</span>. Write operations are

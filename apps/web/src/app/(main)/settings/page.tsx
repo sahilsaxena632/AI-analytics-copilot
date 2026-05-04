@@ -7,7 +7,7 @@ export default function SettingsPage() {
     <>
       <AppHeader title="Settings" subtitle="Workspace preferences and organization options." />
       <PageMain gapClassName="gap-6">
-        <Card className="border-border bg-card/40 shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle>Coming soon</CardTitle>
             <CardDescription>
@@ -15,7 +15,7 @@ export default function SettingsPage() {
               credentials.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-sm leading-relaxed text-muted">
+          <CardContent className="text-sm leading-relaxed text-muted-foreground">
             For demos, use the sidebar to manage connections and run analytics. Production deployments should store secrets
             in a vault, not in the app database.
           </CardContent>

@@ -314,12 +314,12 @@ export default function AppDashboardDetailPage() {
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {layoutEditMode ? (
-          <p className="text-sm leading-relaxed text-muted">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Drag and resize cards to arrange your dashboard. Drag from the title strip (grip icon). Changes are not
             saved until you choose <span className="font-medium text-foreground">Save layout</span>.
           </p>
         ) : (
-          <p className="text-sm text-muted">Arrange cards to match how you read your numbers.</p>
+          <p className="text-sm text-muted-foreground">Arrange cards to match how you read your numbers.</p>
         )}
         <div className="flex flex-wrap items-center gap-2">
           {layoutEditMode ? (
@@ -385,8 +385,8 @@ export default function AppDashboardDetailPage() {
           <div className="space-y-6">
             {toolbar}
             {data.cards.length === 0 ? (
-              <Card className="border-dashed border-border bg-card/30">
-                <CardContent className="py-10 text-center text-sm leading-relaxed text-muted">
+              <Card className="border-dashed border-border/70 bg-background/25">
+                <CardContent className="py-10 text-center text-sm leading-relaxed text-muted-foreground">
                   No cards yet. Use <span className="font-medium text-foreground">Ask query</span> and choose{" "}
                   <span className="font-medium text-foreground">Add to dashboard</span> to pin a result here.
                 </CardContent>
@@ -408,7 +408,7 @@ export default function AppDashboardDetailPage() {
             ) : (
               <div className="space-y-4">
                 {layoutEditMode ? (
-                  <p className="rounded-lg border border-border/70 bg-card/20 px-3 py-2 text-xs text-muted">
+                  <p className="rounded-lg border border-border/70 bg-background/25 px-3 py-2 text-xs text-muted-foreground">
                     On smaller screens cards are shown in order. For drag and resize, use a wider window.
                   </p>
                 ) : null}

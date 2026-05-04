@@ -6,30 +6,40 @@ import { formatCellValue } from "@/lib/format-cell-value";
 export function DataTable({ result }: { result: QueryExecuteResultDto | null }) {
   if (!result || result.columns.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/80 bg-card/20 px-4 py-10 text-center text-sm text-muted">
-        {result && result.columns.length === 0 ? "This query returned no columns." : "Run a query to see rows here."}
+      <div className="rounded-xl border border-dashed border-border/65 bg-background/25 px-6 py-12 text-center">
+        <p className="text-sm font-medium text-foreground">
+          {result && result.columns.length === 0 ? "No columns in this result" : "No table yet"}
+        </p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          {result && result.columns.length === 0
+            ? "The query completed but returned no column definitions."
+            : "Run a query to see rows and column values here."}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card/20 shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] text-left text-sm">
-          <thead className="bg-card/90 text-muted">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card/55 shadow-sm shadow-black/8">
+      <div className="max-h-[min(60vh,520px)] overflow-auto overscroll-contain">
+        <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+          <thead className="sticky top-0 z-10 border-b border-border/50 bg-card/95 backdrop-blur-sm">
             <tr>
               {result.columns.map((c) => (
-                <th key={c} className="border-b border-border px-3 py-2.5 text-xs font-semibold uppercase tracking-wide">
+                <th
+                  key={c}
+                  className="whitespace-nowrap px-4 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
                   {c}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border/40">
             {result.rows.map((row, i) => (
-              <tr key={i} className="odd:bg-background/25">
+              <tr key={i} className="even:bg-background/5 transition-colors hover:bg-background/12">
                 {result.columns.map((c) => (
-                  <td key={c} className="border-b border-border/50 px-3 py-2 align-top text-foreground">
+                  <td key={c} className="px-4 py-3 align-top text-foreground/95">
                     {formatCellValue(row[c])}
                   </td>
                 ))}
@@ -38,7 +48,7 @@ export function DataTable({ result }: { result: QueryExecuteResultDto | null }) 
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col gap-1 border-t border-border bg-card/50 px-3 py-2.5 text-xs text-muted">
+      <div className="flex flex-col gap-1.5 border-t border-border/55 bg-background/35 px-4 py-3 text-xs text-muted-foreground">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span>
             {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
@@ -57,4 +67,3 @@ export function DataTable({ result }: { result: QueryExecuteResultDto | null }) 
     </div>
   );
 }
-

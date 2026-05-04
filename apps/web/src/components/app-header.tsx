@@ -12,18 +12,18 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
   const router = useRouter();
 
   return (
-    <header className="flex flex-col gap-4 border-b border-border bg-card/20 px-6 py-5 backdrop-blur-sm sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-6">
+    <header className="flex flex-col gap-4 border-b border-border/80 bg-card/35 px-6 py-5 backdrop-blur-sm sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-6">
       <div className="min-w-0 flex-1">
         <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
-        {subtitle ? <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">{subtitle}</p> : null}
+        {subtitle ? <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{subtitle}</p> : null}
       </div>
       <div className="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <label className="text-xs text-muted">
-          <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted/80">Theme</span>
+        <label className="text-xs text-muted-foreground">
+          <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground/85">Theme</span>
           <select
             value={theme}
             onChange={(e) => setTheme(e.target.value as AppTheme)}
-            className="rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="h-9 min-w-[110px] rounded-md border border-input bg-background px-3 text-xs text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Select theme"
           >
             <option value="dark">Dark</option>
@@ -31,8 +31,8 @@ export function AppHeader({ title, subtitle }: { title: string; subtitle?: strin
             <option value="green">Green</option>
           </select>
         </label>
-        <div className="text-left text-xs text-muted sm:text-right">
-          <p className="text-[11px] uppercase tracking-wide text-muted/80">Signed in</p>
+        <div className="text-left text-xs text-muted-foreground sm:text-right">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground/85">Signed in</p>
           <p className="truncate font-medium text-foreground sm:max-w-[220px]" title={user?.email ?? undefined}>
             {user?.email}
           </p>

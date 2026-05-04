@@ -38,7 +38,7 @@ export default function QueryDetailPage() {
         {error ? <ErrorBanner message={error} /> : null}
         {loading ? <LoadingState label="Loading saved query…" /> : null}
         {q ? (
-          <Card className="border-border bg-card/40 shadow-sm">
+          <Card>
             <CardHeader>
               <CardTitle>{q.title}</CardTitle>
               <CardDescription>Uses one of your connected databases. Run from Ask query to pick the connection and refresh results.</CardDescription>
@@ -46,20 +46,20 @@ export default function QueryDetailPage() {
             <CardContent className="space-y-4">
               {q.naturalLanguageQuestion ? (
                 <div className="rounded-lg border border-border/60 bg-background/40 px-4 py-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Original question</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Original question</p>
                   <p className="mt-1 text-sm text-foreground">{q.naturalLanguageQuestion}</p>
                 </div>
               ) : null}
               {q.generatedSqlText && q.generatedSqlText.trim() !== q.sqlText.trim() ? (
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">Suggested SQL (before edits)</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suggested SQL (before edits)</p>
                   <pre className="mt-1 overflow-x-auto rounded-md border border-border/60 bg-background/50 p-3 font-mono text-xs text-foreground">
                     {q.generatedSqlText}
                   </pre>
                 </div>
               ) : null}
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted">SQL you saved</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">SQL you saved</p>
                 <pre className="mt-1 overflow-x-auto rounded-md border border-border bg-background/60 p-4 font-mono text-xs leading-relaxed text-foreground">
                   {q.sqlText}
                 </pre>

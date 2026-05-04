@@ -11,16 +11,16 @@ export function QueryInsightsPanel({ result }: { result: QueryExecuteResultDto |
     return null;
   }
   return (
-    <Card className="border-border bg-card/40">
+    <Card className="bg-card/75">
       <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="h-4 w-4 text-primary/90" aria-hidden />
           <CardTitle className="text-base">Insights</CardTitle>
         </div>
-        <CardDescription>{summary.headline}</CardDescription>
+        <CardDescription className="leading-relaxed">{summary.headline}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="list-inside list-disc space-y-1.5 text-sm text-muted">
+        <ul className="list-inside list-disc space-y-2 text-sm leading-relaxed text-muted-foreground">
           {summary.bullets.map((b, i) => (
             <li key={i}>{b}</li>
           ))}

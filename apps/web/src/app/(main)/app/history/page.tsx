@@ -80,9 +80,9 @@ export default function AppHistoryPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="hidden overflow-hidden rounded-lg border border-border md:block">
-              <table className="w-full min-w-[880px] text-left text-sm">
-                <thead className="bg-card/90 text-muted">
+            <div className="hidden overflow-hidden rounded-xl border border-border/60 bg-card/55 shadow-sm shadow-black/10 md:block">
+              <table className="w-full min-w-[880px] border-collapse text-left text-sm">
+                <thead className="bg-card/95 text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">When</th>
                     <th className="px-4 py-3 font-medium">Question</th>
@@ -92,22 +92,22 @@ export default function AppHistoryPage() {
                     <th className="px-4 py-3 font-medium">Rows</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/40">
                   {runs.map((r) => {
                     const q = r.naturalLanguageQuestion?.trim() || r.savedQueryQuestion?.trim() || "—";
                     const saved = r.savedQueryTitle?.trim() || "—";
                     return (
-                      <tr key={r.id} className="border-t border-border/70 odd:bg-background/30">
-                        <td className="whitespace-nowrap px-4 py-3 text-xs text-muted">{formatWhen(r.createdAt)}</td>
+                      <tr key={r.id} className="even:bg-background/5">
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatWhen(r.createdAt)}</td>
                         <td className="max-w-[280px] px-4 py-3 text-foreground" title={q}>
                           <span className="line-clamp-2">{q}</span>
                         </td>
-                        <td className="max-w-[200px] px-4 py-3 text-muted" title={saved}>
+                        <td className="max-w-[200px] px-4 py-3 text-muted-foreground" title={saved}>
                           <span className="line-clamp-2">{saved}</span>
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-xs text-muted">
+                        <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
                           {dbLabel(r.databaseType)}
-                          <span className="block text-[11px] text-muted/80">{r.connectionName}</span>
+                          <span className="block text-[11px] text-muted-foreground/80">{r.connectionName}</span>
                         </td>
                         <td className="px-4 py-3">
                           {r.success ? (
@@ -121,7 +121,7 @@ export default function AppHistoryPage() {
                             </span>
                           )}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-muted">{r.rowCount ?? "—"}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{r.rowCount ?? "—"}</td>
                       </tr>
                     );
                   })}
@@ -134,7 +134,7 @@ export default function AppHistoryPage() {
                 const q = r.naturalLanguageQuestion?.trim() || r.savedQueryQuestion?.trim() || "—";
                 const saved = r.savedQueryTitle?.trim() || "—";
                 return (
-                  <Card key={r.id} className="border-border bg-card/40">
+                  <Card key={r.id}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-base font-medium leading-snug">{q}</CardTitle>
@@ -158,14 +158,14 @@ export default function AppHistoryPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
-                      <p className="flex items-start gap-2 text-muted">
+                      <p className="flex items-start gap-2 text-muted-foreground">
                         <Tag className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>
                           <span className="text-foreground/80">Saved as: </span>
                           {saved}
                         </span>
                       </p>
-                      <p className="flex items-start gap-2 text-muted">
+                      <p className="flex items-start gap-2 text-muted-foreground">
                         <HelpCircle className="mt-0.5 h-4 w-4 shrink-0" />
                         <span className="line-clamp-3 font-mono text-[11px] text-foreground/90">{r.sqlText}</span>
                       </p>

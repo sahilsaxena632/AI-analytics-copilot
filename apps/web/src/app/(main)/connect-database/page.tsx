@@ -9,7 +9,7 @@ export default function ConnectDatabaseRedirectPage() {
     router.replace("/onboarding/connect-database");
   }, [router]);
   return (
-    <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted" role="status">
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground" role="status">
       Redirecting…
     </div>
   );

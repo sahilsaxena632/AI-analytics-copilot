@@ -64,14 +64,14 @@ export default function AppDashboardsPage() {
               <Link
                 key={d.id}
                 href={`/app/dashboards/${d.id}`}
-                className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Card className="h-full border-border bg-card/40 shadow-sm transition-colors group-hover:border-primary/35 group-hover:bg-card/70">
+                <Card className="h-full transition-colors group-hover:border-primary/35 group-hover:bg-card/80">
                   <CardHeader>
                     <CardTitle className="text-lg group-hover:underline">{d.name}</CardTitle>
                     {d.description ? <CardDescription className="line-clamp-2">{d.description}</CardDescription> : null}
                   </CardHeader>
-                  <CardContent className="text-sm text-muted">
+                  <CardContent className="text-sm text-muted-foreground">
                     {typeof d._count?.cards === "number"
                       ? `${d._count.cards} insight${d._count.cards === 1 ? "" : "s"}`
                       : "Insights"}

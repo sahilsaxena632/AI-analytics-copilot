@@ -36,9 +36,9 @@ export function SchemaTableSidebar({
     : tables;
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-card/40">
-      <div className="border-b border-border p-3">
-        <Label htmlFor="table-filter" className="text-xs text-muted">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border/70 bg-card/55">
+      <div className="border-b border-border/60 p-3">
+        <Label htmlFor="table-filter" className="text-xs text-muted-foreground">
           Search tables
         </Label>
         <Input
@@ -56,7 +56,7 @@ export function SchemaTableSidebar({
             <LoadingState label="Loading tables…" />
           </div>
         ) : filtered.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-muted">
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
             {tables.length === 0 ? "No tables found for this connection." : "No tables match your search."}
           </p>
         ) : (
@@ -73,11 +73,13 @@ export function SchemaTableSidebar({
                     onClick={() => onSelectTable(qualified)}
                     className={cn(
                       "flex w-full flex-col rounded-md px-2 py-2 text-left text-sm transition-colors",
-                      active ? "bg-primary/15 text-foreground" : "text-muted hover:bg-card hover:text-foreground",
+                      active
+                        ? "bg-primary/12 text-foreground shadow-sm shadow-black/10"
+                        : "text-muted-foreground hover:bg-background/45 hover:text-foreground",
                     )}
                   >
                     <span className="font-medium text-foreground">{t.tableName}</span>
-                    <span className="text-xs text-muted">{t.tableSchema}</span>
+                    <span className="text-xs text-muted-foreground">{t.tableSchema}</span>
                   </button>
                 </li>
               );

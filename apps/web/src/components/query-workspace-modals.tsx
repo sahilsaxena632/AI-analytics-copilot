@@ -37,12 +37,12 @@ function ModalShell({
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-border bg-card shadow-lg"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-border/80 bg-card/95 shadow-xl shadow-black/20"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border px-4 py-3">
           <h2 className="text-base font-semibold text-foreground">{title}</h2>
-          {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
+          {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
         </div>
         <div className="space-y-4 px-4 py-4">{children}</div>
         <div className="flex flex-wrap justify-end gap-2 border-t border-border px-4 py-3">{footer}</div>
@@ -137,7 +137,7 @@ export function SaveQueryModal(props: {
       </div>
       <div className="space-y-2">
         <Label>Question (read-only)</Label>
-        <p className="rounded-md border border-border/80 bg-background/60 px-3 py-2 text-sm text-muted">
+        <p className="rounded-md border border-border/80 bg-background/60 px-3 py-2 text-sm text-muted-foreground">
           {question.trim() || "—"}
         </p>
       </div>
@@ -285,7 +285,7 @@ export function AddToDashboardModal(props: {
           <Label htmlFor="dash-pick">Dashboard</Label>
           <select
             id="dash-pick"
-            className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+            className="control-base"
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
           >
@@ -325,7 +325,7 @@ export function AddToDashboardModal(props: {
         <Label htmlFor="chart-type">Chart style</Label>
         <select
           id="chart-type"
-          className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+          className="control-base"
           value={chartType}
           onChange={(e) => setChartType(e.target.value as "bar" | "line" | "table")}
         >

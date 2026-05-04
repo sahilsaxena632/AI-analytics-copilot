@@ -30,12 +30,12 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-border bg-card/20">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-5">
+    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-border/80 bg-card/35 backdrop-blur-sm">
+      <div className="flex items-center gap-2 border-b border-border/70 px-4 py-5">
         <Database className="h-6 w-6 shrink-0 text-primary" aria-hidden />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">Analytics Copilot</p>
-          <p className="text-xs text-muted">Manager workspace</p>
+          <p className="text-xs text-muted-foreground">Manager workspace</p>
         </div>
       </div>
       <nav className="flex flex-1 flex-col gap-0.5 p-3">
@@ -47,8 +47,10 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors",
-                active ? "bg-primary/15 font-medium text-foreground" : "text-muted hover:bg-card/80 hover:text-foreground",
+                "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                active
+                  ? "bg-primary/12 font-medium text-foreground shadow-sm shadow-black/10"
+                  : "text-muted-foreground hover:bg-background/45 hover:text-foreground",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />

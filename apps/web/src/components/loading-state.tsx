@@ -17,7 +17,7 @@ export function LoadingState({
   if (bordered) {
     return (
       <div
-        className="flex items-center justify-center gap-2.5 rounded-lg border border-border/60 bg-card/20 px-4 py-3 text-sm text-muted"
+        className="flex items-center justify-center gap-2.5 rounded-lg border border-border/60 bg-background/25 px-4 py-3 text-sm text-muted-foreground"
         role="status"
         aria-live="polite"
       >
@@ -26,7 +26,7 @@ export function LoadingState({
     );
   }
   return (
-    <div className="flex items-center gap-2 text-sm text-muted" role="status" aria-live="polite">
+    <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status" aria-live="polite">
       {inner}
     </div>
   );

@@ -69,6 +69,8 @@ export default function AppAskPage() {
     const s = generateRes.confidenceScore;
     return typeof s === "number" && s < 0.55;
   }, [generateRes]);
+  const canGenerate = !busy && !!question.trim();
+  const canRun = !busy && !!sql.trim();
 
   const loadConnections = useCallback(async () => {
     if (!token) {
@@ -220,17 +222,29 @@ export default function AppAskPage() {
           />
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="border-border bg-card/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">Question</CardTitle>
-                  <CardDescription>What should we analyze? You can start from an example below.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField label="Connection" id="conn">
+            <Card>
+              <CardHeader className="space-y-3">
+                <div className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Step 1 · Ask
+                </div>
+                <div className="space-y-1">
+                  <CardTitle className="text-xl">What would you like to understand?</CardTitle>
+                  <CardDescription>
+                    Start with a plain-language question, then narrow with optional table context before generating SQL.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 lg:grid-cols-[minmax(240px,300px)_1fr]">
+                  <FormField
+                    label="Connection"
+                    id="conn"
+                    hint="Choose the active database to query."
+                    className="rounded-lg border border-border/65 bg-background/25 p-3.5"
+                  >
                     <select
                       id="conn"
-                      className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                      className="control-base"
                       value={connectionId}
                       onChange={(e) => {
                         setConnectionId(e.target.value);
@@ -247,7 +261,29 @@ export default function AppAskPage() {
                       ))}
                     </select>
                   </FormField>
-                  <FormField label="Table context (optional)" id="tbl-ctx" hint="Pick tables to narrow what the generator considers.">
+                  <FormField
+                    label="Your question"
+                    id="q"
+                    hint="Keep it outcome-focused, e.g. trend, top drivers, or segments."
+                    className="rounded-lg border border-primary/30 bg-primary/5 p-3.5"
+                  >
+                    <Textarea
+                      id="q"
+                      rows={5}
+                      placeholder="e.g. Total sales by month for last year"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      className="min-h-[140px] resize-y border-primary/40 bg-background/90 text-sm"
+                    />
+                  </FormField>
+                </div>
+
+                <div className="space-y-4 rounded-lg border border-border/65 bg-background/25 p-3.5">
+                  <FormField
+                    label="Table context (optional)"
+                    id="tbl-ctx"
+                    hint="Pick tables to guide generation when your warehouse is large."
+                  >
                     <AskTableContextPicker
                       tables={schema?.tables ?? []}
                       selectedQualified={selectedTables}
@@ -255,23 +291,23 @@ export default function AppAskPage() {
                       disabled={schemaLoading || !schema?.tables.length}
                     />
                   </FormField>
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted">Active context</p>
-                    <div className="flex min-h-[36px] flex-wrap items-center gap-2">
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Selected tables</p>
+                    <div className="flex min-h-[42px] flex-wrap items-center gap-2">
                       {selectedTables.length === 0 ? (
-                        <span className="inline-flex items-center rounded-full border border-border/70 bg-background/50 px-3 py-1 text-xs text-muted">
-                          Using full schema
+                        <span className="inline-flex items-center rounded-full border border-dashed border-border/75 bg-background/60 px-3 py-1.5 text-xs text-muted-foreground">
+                          No table filters selected (using full schema)
                         </span>
                       ) : (
                         selectedTables.map((q) => (
                           <span
                             key={q}
-                            className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/35 bg-primary/12 pl-2.5 pr-1 py-0.5 text-xs font-medium text-foreground"
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/35 bg-primary/10 py-1 pl-2.5 pr-1 text-xs font-medium text-foreground shadow-sm shadow-black/10"
                           >
-                            <span className="max-w-[220px] truncate font-mono">{q}</span>
+                            <span className="max-w-[240px] truncate font-mono text-[11px]">{q}</span>
                             <button
                               type="button"
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-background/80 hover:text-foreground"
+                              className="flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background/85 hover:text-foreground"
                               aria-label={`Remove ${q} from context`}
                               onClick={() => setSelectedTables((prev) => prev.filter((x) => x !== q))}
                             >
@@ -282,16 +318,6 @@ export default function AppAskPage() {
                       )}
                     </div>
                   </div>
-                  <FormField label="Your question" id="q">
-                    <Textarea
-                      id="q"
-                      rows={4}
-                      placeholder="e.g. Total sales by month for last year"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                      className="resize-y text-sm"
-                    />
-                  </FormField>
                   <FormField label="Extra context for the generator (optional)" id="ctx">
                     <Textarea
                       id="ctx"
@@ -302,116 +328,161 @@ export default function AppAskPage() {
                       className="text-sm"
                     />
                   </FormField>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground">Quick starters</p>
                   <div className="flex flex-wrap gap-2">
                     {EXAMPLES.map((ex) => (
-                      <Button key={ex} type="button" variant="secondary" size="sm" onClick={() => setQuestion(ex)}>
+                      <Button key={ex} type="button" variant="secondary" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setQuestion(ex)}>
                         {ex}
                       </Button>
                     ))}
                   </div>
-                  <Button type="button" onClick={() => void onGenerate()} disabled={!!busy || !question.trim()}>
-                    {busy === "generate" ? <LoadingState label="Generating SQL…" /> : "Generate SQL"}
-                  </Button>
-                  {generateRes?.status === "needs_clarification" ? (
-                    <div className="rounded-md border border-amber-900/50 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
-                      <p className="font-medium">Needs a bit more detail</p>
-                      {generateRes.clarificationQuestion ? (
-                        <p className="mt-2 font-medium text-amber-50">{generateRes.clarificationQuestion}</p>
-                      ) : null}
-                      <p className="mt-1 text-amber-100/90">{generateRes.explanation}</p>
-                      {generateRes.validationError ? (
-                        <p className="mt-2 text-xs text-amber-200/90">Safety check: {generateRes.validationError}</p>
-                      ) : null}
-                      {generateRes.suggestedTables?.length ? (
-                        <p className="mt-2 text-xs text-amber-100/80">
-                          Tables: {generateRes.suggestedTables.slice(0, 8).join(", ")}
-                          {generateRes.suggestedTables.length > 8 ? "…" : ""}
-                        </p>
-                      ) : null}
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/20 px-3.5 py-3">
+                    <div className="text-xs text-muted-foreground">
+                      Next: generate SQL from your question, then review before running.
                     </div>
-                  ) : null}
-                  {generateRes?.status === "ok" && showLowConfidenceWarning ? (
-                    <div className="rounded-md border border-amber-800/40 bg-amber-950/25 px-3 py-2 text-xs text-amber-100">
-                      Low confidence from the model — review SQL carefully before running, or refine your question and
-                      table context.
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
+                    <Button type="button" onClick={() => void onGenerate()} disabled={!canGenerate}>
+                      {busy === "generate" ? <LoadingState label="Generating SQL…" /> : "Generate SQL"}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card className="border-border bg-card/50">
-                <CardHeader>
-                  <CardTitle className="text-lg">SQL &amp; run</CardTitle>
-                  <CardDescription>Review or edit the statement, then execute. Only read-only SELECT is allowed.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <FormField label="SQL" id="sql">
+            <Card>
+              <CardHeader className="space-y-3">
+                <div className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Step 2 · Review and run
+                </div>
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">Generated SQL</CardTitle>
+                  <CardDescription>SQL is shown for transparency. You can edit it, then run a read-only query.</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {generateRes?.status === "needs_clarification" ? (
+                  <div className="rounded-lg border border-amber-900/45 bg-amber-950/25 px-3.5 py-3 text-sm text-amber-100">
+                    <p className="font-medium">Needs a bit more detail</p>
+                    {generateRes.clarificationQuestion ? (
+                      <p className="mt-1.5 font-medium text-amber-50">{generateRes.clarificationQuestion}</p>
+                    ) : null}
+                    <p className="mt-1.5 text-amber-100/90">{generateRes.explanation}</p>
+                    {generateRes.validationError ? (
+                      <p className="mt-2 text-xs text-amber-200/90">Safety check: {generateRes.validationError}</p>
+                    ) : null}
+                    {generateRes.suggestedTables?.length ? (
+                      <p className="mt-1.5 text-xs text-amber-100/80">
+                        Suggested tables: {generateRes.suggestedTables.slice(0, 8).join(", ")}
+                        {generateRes.suggestedTables.length > 8 ? "…" : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+                {generateRes?.status === "ok" && showLowConfidenceWarning ? (
+                  <div className="rounded-lg border border-amber-800/40 bg-amber-950/20 px-3.5 py-2.5 text-xs text-amber-100">
+                    Low confidence from the model — review SQL carefully before running, or refine your question and table context.
+                  </div>
+                ) : null}
+
+                <FormField label="SQL (editable)" id="sql" hint="Only read-only SELECT statements are allowed.">
                     <Textarea
                       id="sql"
                       value={sql}
                       onChange={(e) => setSql(e.target.value)}
-                      className="min-h-[200px] font-mono text-xs leading-relaxed"
+                      className="min-h-[220px] bg-background/80 font-mono text-xs leading-relaxed"
                       spellCheck={false}
                     />
                   </FormField>
-                  {generateRes?.status === "ok" ? (
-                    <div className="rounded-md border border-border/80 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                      <p className="font-medium text-foreground">Why this SQL was generated</p>
-                      <p className="mt-1.5 leading-relaxed text-foreground/90">{generateRes.explanation}</p>
-                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
-                        {generateRes.confidenceScore !== undefined ? (
-                          <span>
-                            Score: {(generateRes.confidenceScore * 100).toFixed(0)}%
-                            {generateRes.confidence ? ` (${generateRes.confidence})` : ""}
-                          </span>
-                        ) : generateRes.confidence ? (
-                          <span>Confidence: {generateRes.confidence}</span>
-                        ) : null}
-                        {generateRes.providerUsed ? <span>Provider: {generateRes.providerUsed}</span> : null}
-                      </div>
-                      {generateRes.usedTables?.length ? (
-                        <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          Tables referenced:{" "}
-                          <span className="font-mono text-foreground/80">{generateRes.usedTables.join(", ")}</span>
-                        </p>
+                {generateRes?.status === "ok" ? (
+                  <div className="rounded-lg border border-border/70 bg-background/25 px-3.5 py-3 text-xs text-muted-foreground">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/85">Why this SQL</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">{generateRes.explanation}</p>
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                      {generateRes.confidenceScore !== undefined ? (
+                        <span>
+                          Score: {(generateRes.confidenceScore * 100).toFixed(0)}%
+                          {generateRes.confidence ? ` (${generateRes.confidence})` : ""}
+                        </span>
+                      ) : generateRes.confidence ? (
+                        <span>Confidence: {generateRes.confidence}</span>
                       ) : null}
+                      {generateRes.providerUsed ? <span>Provider: {generateRes.providerUsed}</span> : null}
                     </div>
-                  ) : null}
-                  <Button type="button" onClick={() => void onRun()} disabled={!!busy || !sql.trim()}>
+                    {generateRes.usedTables?.length ? (
+                      <p className="mt-1.5 text-[11px] text-muted-foreground">
+                        Tables referenced: <span className="font-mono text-foreground/80">{generateRes.usedTables.join(", ")}</span>
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border/75 bg-background/20 px-3.5 py-3 text-sm text-muted-foreground">
+                    Generate SQL to see a plain-language explanation before you run.
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/20 px-3.5 py-3">
+                  <div className="text-xs text-muted-foreground">Next: run query to view table output, chart suggestion, and insights.</div>
+                  <Button type="button" onClick={() => void onRun()} disabled={!canRun}>
                     {busy === "run" ? <LoadingState label="Running…" /> : "Run query"}
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <Card className="border-border bg-card/40 shadow-sm">
-              <CardHeader>
+            <Card>
+              <CardHeader className="space-y-3">
+                <div className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Step 3 · Review insight
+                </div>
                 <CardTitle className="text-lg">Results</CardTitle>
-                <CardDescription>Table, suggested chart, and a short narrative you can share as-is.</CardDescription>
+                <CardDescription>Clean output view with data, suggested visualization, and summary insights.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {result ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button type="button" variant="secondary" size="sm" onClick={() => setSaveModalOpen(true)}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/25 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">
+                      Result ready: {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
+                      {result.truncated ? " (truncated)" : ""}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2.5 text-xs"
+                        onClick={() => setSaveModalOpen(true)}
+                      >
                       Save query
-                    </Button>
-                    <Button type="button" variant="secondary" size="sm" onClick={() => setDashboardModalOpen(true)}>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2.5 text-xs"
+                        onClick={() => setDashboardModalOpen(true)}
+                      >
                       Add to dashboard
-                    </Button>
-                    {savedQueryId ? (
-                      <span className="text-xs text-muted">
-                        Next runs are linked to saved query{" "}
-                        <button
-                          type="button"
-                          className="text-primary underline-offset-2 hover:underline"
-                          onClick={() => setSavedQueryId(null)}
-                        >
-                          (clear)
-                        </button>
-                      </span>
-                    ) : null}
+                      </Button>
+                      {savedQueryId ? (
+                        <span className="text-xs text-muted-foreground">
+                          Linked to saved query{" "}
+                          <button
+                            type="button"
+                            className="text-primary underline-offset-2 hover:underline"
+                            onClick={() => setSavedQueryId(null)}
+                          >
+                            (clear)
+                          </button>
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border/75 bg-background/20 px-4 py-7 text-sm text-muted-foreground">
+                    Run a query to see results here. The flow is: generate SQL, review it, then run.
+                  </div>
+                )}
                 <DataTable result={result} />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <QueryAutoChart result={result} />

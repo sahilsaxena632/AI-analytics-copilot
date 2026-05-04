@@ -66,7 +66,7 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card/95 shadow-lg shadow-black/10">
+      <Card className="w-full max-w-md bg-card/95 shadow-lg shadow-black/15">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
           <CardDescription>Use your workspace account. Demo credentials work after the database is seeded.</CardDescription>
@@ -97,7 +97,7 @@ function LoginForm() {
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-xs text-muted">Demo: demo@example.com / demo123 (after seed)</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">Demo: demo@example.com / demo123 (after seed)</p>
         </CardContent>
       </Card>
     </div>

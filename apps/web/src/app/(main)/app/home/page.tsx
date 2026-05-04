@@ -31,7 +31,7 @@ export default function AppHomePage() {
             value="Save · History · Dashboards"
           />
         </div>
-        <Card className="border-border bg-card/40 shadow-sm">
+        <Card>
           <CardHeader>
             <CardTitle>Get started</CardTitle>
             <CardDescription>Add a database your team already uses, then try a question on sample or real data.</CardDescription>
