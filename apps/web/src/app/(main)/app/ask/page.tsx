@@ -29,6 +29,7 @@ import { SaveQueryModal, AddToDashboardModal } from "@/components/query-workspac
 import { inferDashboardCardChartType } from "@/lib/query-result-heuristics";
 
 type Connection = { id: string; name: string; isActive: boolean };
+type WorkspaceQueryPreferences = { defaultDatabaseConnectionId: string | null };
 
 const EXAMPLES = [
   "Show total revenue by month",
@@ -79,11 +80,20 @@ export default function AppAskPage() {
     setConnectionsLoading(true);
     setConnectionsError(null);
     try {
-      const rows = await apiFetch<Connection[]>("/database-connections", { token });
+      const [rows, preferences] = await Promise.all([
+        apiFetch<Connection[]>("/database-connections", { token }),
+        apiFetch<WorkspaceQueryPreferences>("/settings/workspace", { token }),
+      ]);
       setConnections(rows);
       setConnectionId((prev) => {
         if (prev && rows.some((r) => r.id === prev && r.isActive)) {
           return prev;
+        }
+        if (preferences.defaultDatabaseConnectionId) {
+          const defaultConnection = rows.find((r) => r.id === preferences.defaultDatabaseConnectionId && r.isActive);
+          if (defaultConnection) {
+            return defaultConnection.id;
+          }
         }
         return rows.find((r) => r.isActive)?.id ?? "";
       });

@@ -10,6 +10,7 @@ import { QueryModule } from "./query/query.module";
 import { SavedQueriesModule } from "./saved-queries/saved-queries.module";
 import { DashboardsModule } from "./dashboards/dashboards.module";
 import { AuditModule } from "./audit/audit.module";
+import { SettingsModule } from "./settings/settings.module";
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuditModule } from "./audit/audit.module";
     QueryModule,
     SavedQueriesModule,
     DashboardsModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

@@ -33,6 +33,7 @@ model Organization {
   savedQueries SavedQuery[]
   dashboards  Dashboard[]
   auditLogs   AuditLog[]
+  settings    WorkspaceSettings?
 }
 
 model User {
@@ -46,6 +47,46 @@ model User {
   updatedAt      DateTime @updatedAt
 
   auditLogs AuditLog[]
+  settings  UserSettings?
+}
+
+model UserSettings {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName String?
+  theme       String   @default("system")
+  locale      String   @default("en-US")
+  density     String   @default("comfortable")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WorkspaceSettings {
+  id                          String              @id @default(cuid())
+  organizationId              String              @unique
+  organization                Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  timezone                    String              @default("UTC")
+  defaultDatabaseConnectionId String?
+  defaultDatabaseConnection   DatabaseConnection? @relation("DefaultWorkspaceConnection", fields: [defaultDatabaseConnectionId], references: [id], onDelete: SetNull)
+  defaultQueryRowLimit        Int                 @default(100)
+  defaultSchemaContextMode    String              @default("selected_tables")
+  showSqlByDefault            Boolean             @default(true)
+  showExplanationByDefault    Boolean             @default(true)
+  autoRunGeneratedSql         Boolean             @default(false)
+  autoChart                   Boolean             @default(true)
+  defaultChartType            String              @default("auto")
+  kpiFirst                    Boolean             @default(true)
+  chartCollapsedByDefault     Boolean             @default(false)
+  chartDensity                String              @default("comfortable")
+  clarificationMode           String              @default("ask_when_unsure")
+  lowConfidenceWarning        Boolean             @default(true)
+  preferredLlmProvider        String              @default("automatic")
+  preferredLlmModel           String?
+  notifications               Json                @default("{\"anomalyAlerts\":true,\"scheduledReports\":true,\"dashboardRefresh\":false,\"inApp\":true,\"email\":false}")
+  dashboardDefaults           Json                @default("{\"defaultLayout\":\"balanced\",\"refreshInterval\":\"manual\"}")
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
 }
 
 model DatabaseConnection {
@@ -71,6 +112,7 @@ model DatabaseConnection {
   savedQueries   SavedQuery[]
   queryRuns      QueryRun[]
   dashboardCards DashboardCard[]
+  defaultForWorkspaceSettings WorkspaceSettings[] @relation("DefaultWorkspaceConnection")
 
   @@index([organizationId])
 }
