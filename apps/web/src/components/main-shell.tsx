@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
+import { MobileNav } from "@/components/mobile-nav";
 import { LoadingState } from "@/components/loading-state";
 import { useAuth } from "@/lib/auth-context";
 
@@ -19,16 +20,19 @@ export function MainShell({ children }: { children: ReactNode }) {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="app-backdrop flex min-h-screen items-center justify-center bg-background">
         <LoadingState bordered label="Opening your workspace…" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="app-backdrop flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <MobileNav />
+        {children}
+      </div>
     </div>
   );
 }

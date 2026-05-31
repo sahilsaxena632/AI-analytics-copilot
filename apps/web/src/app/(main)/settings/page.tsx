@@ -117,6 +117,31 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const activeDatabases = useMemo(() => draft?.databases.filter((db) => db.isActive) ?? [], [draft]);
+  const [activeSection, setActiveSection] = useState<string>(sections[0].id);
+
+  useEffect(() => {
+    if (!draft) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]?.target.id) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: 0 },
+    );
+    sections.forEach((s) => {
+      const el = document.getElementById(s.id);
+      if (el) {
+        observer.observe(el);
+      }
+    });
+    return () => observer.disconnect();
+  }, [draft]);
 
   const loadSettings = useCallback(async () => {
     if (!token) {
@@ -306,17 +331,27 @@ export default function SettingsPage() {
           </Card>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[230px_1fr]">
-            <aside className="h-fit rounded-lg border border-border/70 bg-card/45 p-2 lg:sticky lg:top-24">
-              <nav className="space-y-1" aria-label="Settings sections">
+            <aside className="h-fit rounded-xl border border-border/70 bg-card/45 p-2 lg:sticky lg:top-24">
+              <nav className="space-y-0.5" aria-label="Settings sections">
                 {sections.map((section) => {
                   const Icon = section.icon;
+                  const active = activeSection === section.id;
                   return (
                     <a
                       key={section.id}
                       href={`#${section.id}`}
-                      className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
+                      aria-current={active ? "true" : undefined}
+                      className={cn(
+                        "relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all",
+                        active
+                          ? "bg-primary/12 font-medium text-foreground"
+                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                      )}
                     >
-                      <Icon className="h-4 w-4" aria-hidden />
+                      {active ? (
+                        <span className="absolute left-0 top-1/2 h-4 w-1 -translate-y-1/2 rounded-r-full bg-primary-gradient" />
+                      ) : null}
+                      <Icon className={cn("h-4 w-4", active && "text-primary")} aria-hidden />
                       {section.label}
                     </a>
                   );

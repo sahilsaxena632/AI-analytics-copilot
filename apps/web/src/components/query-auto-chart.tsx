@@ -125,7 +125,7 @@ export function QueryAutoChart({
     const n = toNumber(raw);
     const label = col.replace(/_/g, " ");
     return (
-      <Card className="bg-card/75">
+      <Card className="animate-fade-up bg-card/75">
         <CardHeader className="space-y-1 pb-3">
           <CardDescription className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             Key figure
@@ -156,7 +156,7 @@ export function QueryAutoChart({
     }
 
     return (
-      <Card className="flex h-full flex-col bg-card/75">
+      <Card className="animate-fade-up flex h-full flex-col bg-card/75">
         <CardHeader className="space-y-1 pb-0 pt-1">
           <CardTitle className="text-base font-semibold tracking-tight">Trend</CardTitle>
           <CardDescription className="space-y-1 leading-relaxed">
@@ -306,7 +306,7 @@ export function QueryAutoChart({
     );
 
   return (
-    <Card className="flex h-full flex-col bg-card/75">
+    <Card className="animate-fade-up flex h-full flex-col bg-card/75">
       <CardHeader className="space-y-1 pb-0 pt-1">
         <CardTitle className="text-base font-semibold tracking-tight">{chartTitle}</CardTitle>
         <CardDescription className="space-y-1 leading-relaxed">

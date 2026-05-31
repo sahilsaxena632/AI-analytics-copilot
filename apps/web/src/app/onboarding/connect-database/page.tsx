@@ -146,8 +146,8 @@ export default function OnboardingConnectDatabasePage() {
   return (
     <div className="flex flex-1 flex-col gap-8">
       <header className="space-y-2 text-center sm:text-left">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 sm:mx-0">
-          <Database className="h-7 w-7 text-primary" />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary-gradient shadow-glow sm:mx-0">
+          <Database className="h-7 w-7 text-white" />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Connect your database</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">

@@ -15,7 +15,7 @@ export function PageMain({
   return (
     <main
       className={cn(
-        "mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-6 md:px-8 md:py-8",
+        "animate-fade-up mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-6 sm:px-6 md:px-8 md:py-8",
         gapClassName,
         className,
       )}

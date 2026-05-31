@@ -25,7 +25,8 @@ import { PageMain } from "@/components/page-main";
 import { useAuth } from "@/lib/auth-context";
 import { qualifiedTableName } from "@/components/schema-explorer/schema-table-sidebar";
 import { AskTableContextPicker } from "@/components/ask-table-context-picker";
-import { MessageSquareText, X } from "lucide-react";
+import { MessageSquareText, Sparkles, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { SaveQueryModal, AddToDashboardModal } from "@/components/query-workspace-modals";
 import { inferDashboardCardChartType } from "@/lib/query-result-heuristics";
 
@@ -250,8 +251,8 @@ export default function AppAskPage() {
   return (
     <>
       <AppHeader
-        title="Ask a question"
-        subtitle="Describe what you want in plain language, review the SQL, then run a read-only query against your data."
+        title="Ask copilot"
+        subtitle="Describe what you want in plain language. The copilot writes safe, read-only SQL — review it, run it, and get an instant chart and insight."
       />
       <PageMain gapClassName="gap-6">
         {error ? <ErrorBanner message={error} /> : null}
@@ -276,9 +277,7 @@ export default function AppAskPage() {
           <div className="flex flex-col gap-6">
             <Card>
               <CardHeader className="space-y-3">
-                <div className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Step 1 · Ask
-                </div>
+                <StepBadge step={1} label="Ask" />
                 <div className="space-y-1">
                   <CardTitle className="text-xl">What would you like to understand?</CardTitle>
                   <CardDescription>
@@ -386,9 +385,15 @@ export default function AppAskPage() {
                   <p className="text-xs font-medium text-muted-foreground">Quick starters</p>
                   <div className="flex flex-wrap gap-2">
                     {EXAMPLES.map((ex) => (
-                      <Button key={ex} type="button" variant="secondary" size="sm" className="h-8 px-2.5 text-xs" onClick={() => setQuestion(ex)}>
+                      <button
+                        key={ex}
+                        type="button"
+                        onClick={() => setQuestion(ex)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/40 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-foreground"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-primary/80" />
                         {ex}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/20 px-3.5 py-3">
@@ -405,9 +410,7 @@ export default function AppAskPage() {
 
             <Card>
               <CardHeader className="space-y-3">
-                <div className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Step 2 · Review and run
-                </div>
+                <StepBadge step={2} label="Review and run" />
                 <div className="space-y-1">
                   <CardTitle className="text-lg">Generated SQL</CardTitle>
                   <CardDescription>SQL is shown for transparency. You can edit it, then run a read-only query.</CardDescription>
@@ -484,18 +487,19 @@ export default function AppAskPage() {
 
             <Card>
               <CardHeader className="space-y-3">
-                <div className="inline-flex w-fit items-center rounded-full border border-border/70 bg-background/35 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Step 3 · Review insight
-                </div>
+                <StepBadge step={3} label="Review insight" />
                 <CardTitle className="text-lg">Results</CardTitle>
                 <CardDescription>Clean output view with data, suggested visualization, and summary insights.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {result ? (
                   <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/70 bg-background/25 px-3 py-2">
-                    <div className="text-xs text-muted-foreground">
-                      Result ready: {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
-                      {result.truncated ? " (truncated)" : ""}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge variant="success">Result ready</Badge>
+                      <span className="tabular-nums">
+                        {result.rowCount} row{result.rowCount === 1 ? "" : "s"}
+                        {result.truncated ? " (truncated)" : ""}
+                      </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Button
@@ -569,5 +573,16 @@ export default function AppAskPage() {
         </>
       ) : null}
     </>
+  );
+}
+
+function StepBadge({ step, label }: { step: number; label: string }) {
+  return (
+    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/8 py-1 pl-1 pr-3 text-[11px] font-semibold uppercase tracking-wide text-primary">
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-gradient text-[10px] font-bold text-white">
+        {step}
+      </span>
+      {label}
+    </div>
   );
 }

@@ -1,54 +1,79 @@
 import Link from "next/link";
+import { Database, MessageSquareText, Table2 } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
-import { InsightCard } from "@/components/insight-card";
 import { PageMain } from "@/components/page-main";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopilotHero } from "@/components/home/copilot-hero";
+import { HomeMetrics } from "@/components/home/home-metrics";
+import { HomeCharts } from "@/components/home/home-charts";
+import { HomeInsights } from "@/components/home/home-insights";
+import { RecentActivity } from "@/components/home/recent-activity";
 import { cn } from "@/lib/utils";
 
 export default function AppHomePage() {
   return (
     <>
       <AppHeader
-        title="Home"
-        subtitle="Connect your warehouse, explore what’s inside, and get answers with read-only analytics."
+        title="Command center"
+        subtitle="Your live analytics overview — ask the copilot, track the metrics that matter, and pick up where your team left off."
+        actions={
+          <Link href="/onboarding/connect-database" className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}>
+            <Database className="h-4 w-4" />
+            <span className="hidden sm:inline">Connect database</span>
+          </Link>
+        }
       />
       <PageMain>
-        <div className="grid gap-4 md:grid-cols-3">
-          <InsightCard
-            title="Typical flow"
-            description="From connection to answers in a few guided steps"
-            value="Connect → Explore → Ask → Run"
-          />
-          <InsightCard
-            title="Safe by design"
-            description="Queries are checked before they reach your database"
-            value="Read-only SQL"
-          />
-          <InsightCard
-            title="Share what matters"
-            description="Save questions, revisit history, pin views to dashboards"
-            value="Save · History · Dashboards"
-          />
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Get started</CardTitle>
-            <CardDescription>Add a database your team already uses, then try a question on sample or real data.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
-            <Link href="/onboarding/connect-database" className={cn(buttonVariants())}>
-              Connect database
-            </Link>
-            <Link href="/app/ask" className={cn(buttonVariants({ variant: "secondary" }))}>
+        <CopilotHero />
+
+        <section className="space-y-4">
+          <SectionLabel title="Key metrics" hint="Demo data — connect a database to see live numbers" />
+          <HomeMetrics />
+        </section>
+
+        <section className="space-y-4">
+          <SectionLabel title="Performance" />
+          <HomeCharts />
+        </section>
+
+        <section className="space-y-4">
+          <SectionLabel title="AI insights" hint="Generated from recent trends" />
+          <HomeInsights />
+        </section>
+
+        <section className="space-y-4">
+          <SectionLabel title="Recent activity" />
+          <RecentActivity />
+        </section>
+
+        <section className="surface-elevated flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold tracking-tight text-foreground">Ready to explore your own data?</h3>
+            <p className="text-sm text-muted-foreground">
+              Connect a warehouse, browse the schema, then ask the copilot anything.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Link href="/app/ask" className={cn(buttonVariants())}>
+              <MessageSquareText className="h-4 w-4" />
               Ask a question
             </Link>
             <Link href="/app/schema" className={cn(buttonVariants({ variant: "secondary" }))}>
+              <Table2 className="h-4 w-4" />
               Browse schema
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </PageMain>
     </>
+  );
+}
+
+function SectionLabel({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-muted-foreground">{title}</h2>
+      {hint ? <span className="text-xs text-muted-foreground/70">{hint}</span> : null}
+    </div>
   );
 }

@@ -1,54 +1,73 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme, type AppTheme } from "@/lib/theme-context";
 
-export function AppHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+export function AppHeader({
+  title,
+  subtitle,
+  actions,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
+}) {
   const { user, clearSession } = useAuth();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
+  const initial = user?.email?.trim()?.charAt(0)?.toUpperCase() || "U";
+
   return (
-    <header className="flex flex-col gap-4 border-b border-border/80 bg-card/35 px-6 py-5 backdrop-blur-sm sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-6">
+    <header className="sticky top-0 z-30 flex flex-col gap-4 border-b border-border/60 bg-background/70 px-5 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-5">
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
-        {subtitle ? <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{subtitle}</p> : null}
+        <h1 className="truncate text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{title}</h1>
+        {subtitle ? (
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
+        ) : null}
       </div>
-      <div className="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <label className="text-xs text-muted-foreground">
-          <span className="mb-1 block text-[11px] uppercase tracking-wide text-muted-foreground/85">Theme</span>
+      <div className="flex shrink-0 items-center gap-2.5">
+        {actions}
+        <div className="relative">
           <select
             value={theme}
             onChange={(e) => setTheme(e.target.value as AppTheme)}
-            className="h-9 min-w-[110px] rounded-md border border-input bg-background px-3 text-xs text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 cursor-pointer rounded-lg border border-border/70 bg-card/60 pl-3 pr-8 text-xs font-medium text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Select theme"
           >
             <option value="dark">Dark</option>
             <option value="light">Light</option>
             <option value="green">Green</option>
           </select>
-        </label>
-        <div className="text-left text-xs text-muted-foreground sm:text-right">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground/85">Signed in</p>
-          <p className="truncate font-medium text-foreground sm:max-w-[220px]" title={user?.email ?? undefined}>
-            {user?.email}
-          </p>
+        </div>
+        <div className="hidden items-center gap-2.5 rounded-lg border border-border/70 bg-card/60 py-1 pl-1 pr-3 sm:flex">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-gradient text-xs font-semibold text-white">
+            {initial}
+          </span>
+          <div className="min-w-0 leading-tight">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground/85">Signed in</p>
+            <p className="max-w-[160px] truncate text-xs font-medium text-foreground" title={user?.email ?? undefined}>
+              {user?.email}
+            </p>
+          </div>
         </div>
         <Button
           type="button"
-          variant="secondary"
-          size="sm"
-          className="whitespace-nowrap"
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Sign out"
+          title="Sign out"
           onClick={() => {
             clearSession();
             router.push("/login");
           }}
         >
           <LogOut className="h-4 w-4" />
-          Sign out
         </Button>
       </div>
     </header>

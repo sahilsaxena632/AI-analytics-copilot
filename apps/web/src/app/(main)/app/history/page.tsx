@@ -2,16 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { QueryRunHistoryDto } from "@analytics-copilot/shared";
+import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
-import { LoadingState } from "@/components/loading-state";
 import { EmptyState } from "@/components/empty-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { ErrorBanner } from "@/components/error-banner";
+import { ListSkeleton } from "@/components/skeleton";
 import { PageMain } from "@/components/page-main";
 import { apiFetch } from "@/lib/api";
 import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
-import { Clock, Database, HelpCircle, Tag } from "lucide-react";
+import { Clock, Database, HelpCircle, History, Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function dbLabel(t: QueryRunHistoryDto["databaseType"]): string {
   return t === "mysql" ? "MySQL" : "PostgreSQL";
@@ -72,15 +76,21 @@ export default function AppHistoryPage() {
         ) : error ? (
           <ErrorBanner message={error} />
         ) : loading ? (
-          <LoadingState label="Loading history…" />
+          <ListSkeleton rows={6} />
         ) : empty ? (
           <EmptyState
+            icon={History}
             title="No runs yet"
-            description="Run a query from Ask query. Successful and failed runs appear here with the question when available."
+            description="Ask the copilot a question, then return here. Successful and failed runs appear with the original question when available."
+            action={
+              <Link href="/app/ask" className={cn(buttonVariants())}>
+                Ask the copilot
+              </Link>
+            }
           />
         ) : (
           <div className="space-y-4">
-            <div className="hidden overflow-hidden rounded-xl border border-border/60 bg-card/55 shadow-sm shadow-black/10 md:block">
+            <div className="hidden overflow-hidden rounded-xl border border-border/60 bg-card/55 shadow-soft md:block">
               <table className="w-full min-w-[880px] border-collapse text-left text-sm">
                 <thead className="bg-card/95 text-muted-foreground">
                   <tr>
@@ -111,14 +121,11 @@ export default function AppHistoryPage() {
                         </td>
                         <td className="px-4 py-3">
                           {r.success ? (
-                            <span className="rounded-full bg-emerald-950/60 px-2 py-0.5 text-xs text-emerald-200">Success</span>
+                            <Badge variant="success">Success</Badge>
                           ) : (
-                            <span
-                              className="rounded-full bg-red-950/60 px-2 py-0.5 text-xs text-red-200"
-                              title={r.errorMessage ?? ""}
-                            >
+                            <Badge variant="danger" title={r.errorMessage ?? ""}>
                               Failed
-                            </span>
+                            </Badge>
                           )}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{r.rowCount ?? "—"}</td>
@@ -139,11 +146,13 @@ export default function AppHistoryPage() {
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-base font-medium leading-snug">{q}</CardTitle>
                         {r.success ? (
-                          <span className="shrink-0 rounded-full bg-emerald-950/60 px-2 py-0.5 text-xs text-emerald-200">
+                          <Badge variant="success" className="shrink-0">
                             OK
-                          </span>
+                          </Badge>
                         ) : (
-                          <span className="shrink-0 rounded-full bg-red-950/60 px-2 py-0.5 text-xs text-red-200">Err</span>
+                          <Badge variant="danger" className="shrink-0">
+                            Err
+                          </Badge>
                         )}
                       </div>
                       <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

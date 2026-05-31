@@ -20,7 +20,7 @@ export function DataTable({ result }: { result: QueryExecuteResultDto | null }) 
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card/55 shadow-sm shadow-black/8">
+    <div className="animate-fade-up overflow-hidden rounded-xl border border-border/60 bg-card/55 shadow-soft">
       <div className="max-h-[min(60vh,520px)] overflow-auto overscroll-contain">
         <table className="w-full min-w-[480px] border-collapse text-left text-sm">
           <thead className="sticky top-0 z-10 border-b border-border/50 bg-card/95 backdrop-blur-sm">

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorBanner } from "@/components/error-banner";
 import { ListSkeleton } from "@/components/skeleton";
@@ -11,7 +13,8 @@ import { PageMain } from "@/components/page-main";
 import { apiFetch } from "@/lib/api";
 import { friendlyApiMessage } from "@/lib/friendly-api-message";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard } from "lucide-react";
+import { ArrowUpRight, LayoutDashboard } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type DashboardRow = {
   id: string;
@@ -56,7 +59,12 @@ export default function AppDashboardsPage() {
           <EmptyState
             icon={LayoutDashboard}
             title="No dashboards yet"
-            description="Pin a chart from Ask query to create your first board, or ask your team to share one."
+            description="Pin a chart from the copilot to create your first board, then arrange live insights your team can revisit anytime."
+            action={
+              <Link href="/app/ask" className={cn(buttonVariants())}>
+                Create your first insight
+              </Link>
+            }
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -66,15 +74,27 @@ export default function AppDashboardsPage() {
                 href={`/app/dashboards/${d.id}`}
                 className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Card className="h-full transition-colors group-hover:border-primary/35 group-hover:bg-card/80">
-                  <CardHeader>
-                    <CardTitle className="text-lg group-hover:underline">{d.name}</CardTitle>
-                    {d.description ? <CardDescription className="line-clamp-2">{d.description}</CardDescription> : null}
+                <Card interactive className="flex h-full flex-col">
+                  <CardHeader className="flex-row items-start justify-between space-y-0">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/12 text-accent">
+                        <LayoutDashboard className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <CardTitle className="truncate text-base group-hover:text-primary">{d.name}</CardTitle>
+                        {d.description ? (
+                          <CardDescription className="mt-1 line-clamp-2">{d.description}</CardDescription>
+                        ) : null}
+                      </div>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground/60 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    {typeof d._count?.cards === "number"
-                      ? `${d._count.cards} insight${d._count.cards === 1 ? "" : "s"}`
-                      : "Insights"}
+                  <CardContent className="mt-auto">
+                    <Badge variant="primary">
+                      {typeof d._count?.cards === "number"
+                        ? `${d._count.cards} insight${d._count.cards === 1 ? "" : "s"}`
+                        : "Insights"}
+                    </Badge>
                   </CardContent>
                 </Card>
               </Link>
