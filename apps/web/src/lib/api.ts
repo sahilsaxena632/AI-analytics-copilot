@@ -1,4 +1,13 @@
-const base = () => process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+function resolveApiBase(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("NEXT_PUBLIC_API_URL is required in production builds");
+    }
+    return "http://localhost:4000";
+  }
+  return url.replace(/\/$/, "");
+}
 
 export class ApiError extends Error {
   constructor(
@@ -9,6 +18,18 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+type SessionBridge = {
+  getRefreshToken: () => string | null;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  clearSession: () => void;
+};
+
+let sessionBridge: SessionBridge | null = null;
+
+export function configureApiSession(bridge: SessionBridge) {
+  sessionBridge = bridge;
 }
 
 function parseResponseBody(text: string): unknown {
@@ -42,21 +63,52 @@ function extractErrorMessage(data: unknown, statusText: string): string {
   return statusText || "Request failed";
 }
 
+async function refreshAccessToken(): Promise<string | null> {
+  if (!sessionBridge) {
+    return null;
+  }
+  const refreshToken = sessionBridge.getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+  try {
+    const res = await fetch(`${resolveApiBase()}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    const text = await res.text();
+    const data = parseResponseBody(text) as { accessToken?: string; refreshToken?: string } | null;
+    if (!res.ok || !data?.accessToken || !data.refreshToken) {
+      return null;
+    }
+    sessionBridge.setTokens(data.accessToken, data.refreshToken);
+    return data.accessToken;
+  } catch {
+    return null;
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit & { token?: string | null } = {},
 ): Promise<T> {
   const { token, headers, ...rest } = options;
-  let res: Response;
-  try {
-    res = await fetch(`${base()}${path}`, {
+
+  async function performRequest(bearer: string | null | undefined): Promise<Response> {
+    return fetch(`${resolveApiBase()}${path}`, {
       ...rest,
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
         ...headers,
       },
     });
+  }
+
+  let res: Response;
+  try {
+    res = await performRequest(token);
   } catch {
     throw new ApiError(
       "We couldn’t reach the server. Check your connection, or try again in a moment.",
@@ -64,6 +116,20 @@ export async function apiFetch<T>(
       undefined,
     );
   }
+
+  if (res.status === 401 && token && sessionBridge) {
+    const nextToken = await refreshAccessToken();
+    if (nextToken) {
+      res = await performRequest(nextToken);
+    } else {
+      sessionBridge.clearSession();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        window.location.assign("/login");
+      }
+      throw new ApiError("Your session expired. Please sign in again.", 401);
+    }
+  }
+
   const text = await res.text();
   const data = parseResponseBody(text);
   if (!res.ok) {

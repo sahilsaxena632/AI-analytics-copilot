@@ -6,6 +6,7 @@ import type { ConnectionCredentials } from "./connection-credentials.types";
 import type { DatabaseAdapter } from "./adapters/database-adapter.interface";
 import { MysqlAdapter } from "./adapters/mysql.adapter";
 import { PostgresAdapter } from "./adapters/postgres.adapter";
+import { CredentialEncryptionService } from "./credential-encryption.service";
 
 /**
  * Central registry for external DB adapters.
@@ -13,6 +14,8 @@ import { PostgresAdapter } from "./adapters/postgres.adapter";
  */
 @Injectable()
 export class DatabaseAdapterFactory {
+  constructor(private readonly credentialEncryption: CredentialEncryptionService) {}
+
   createFromCredentials(type: ExternalDbProvider, credentials: ConnectionCredentials): DatabaseAdapter {
     if (type === ExternalDbProvider.mysql) {
       return new MysqlAdapter(credentials);
@@ -27,7 +30,7 @@ export class DatabaseAdapterFactory {
         port: row.port!,
         database: row.databaseName!,
         username: row.username!,
-        password: row.password!,
+        password: this.credentialEncryption.decrypt(row.password)!,
         ssl: row.ssl,
       };
       if (row.databaseType === ExternalDbProvider.mysql) {
@@ -44,7 +47,8 @@ export class DatabaseAdapterFactory {
 
     const legacy = row.connectionString?.trim();
     if (legacy) {
-      return new PostgresAdapter({ kind: "uri", connectionUri: legacy });
+      const connectionUri = this.credentialEncryption.decrypt(legacy)!;
+      return new PostgresAdapter({ kind: "uri", connectionUri });
     }
 
     throw new BadRequestException("Connection is missing credentials");

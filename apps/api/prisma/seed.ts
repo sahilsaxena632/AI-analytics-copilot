@@ -1,9 +1,39 @@
-import { PrismaClient, AuditAction, ExternalDbProvider } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import { createCipheriv, randomBytes, scryptSync } from "crypto";
 
-const prisma = new PrismaClient();
+const PREFIX = "enc:v1:";
+const SALT = "analytics-copilot-credential-v1";
+
+function buildKey(secret: string): Buffer {
+  return scryptSync(secret, SALT, 32);
+}
+
+function encryptValue(key: Buffer, plaintext: string): string {
+  if (plaintext.startsWith(PREFIX)) {
+    return plaintext;
+  }
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${PREFIX}${iv.toString("base64url")}:${tag.toString("base64url")}:${encrypted.toString("base64url")}`;
+}
 
 async function main() {
+  if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOW !== "true") {
+    console.log("Skipping seed in production. Set SEED_ALLOW=true to override.");
+    return;
+  }
+
+  const { PrismaClient, AuditAction, ExternalDbProvider } = await import("@prisma/client");
+  const bcrypt = await import("bcrypt");
+  const prisma = new PrismaClient();
+
+  const encryptionSecret = process.env.CREDENTIAL_ENCRYPTION_KEY;
+  if (!encryptionSecret || encryptionSecret.length < 32) {
+    throw new Error("CREDENTIAL_ENCRYPTION_KEY must be set and at least 32 characters before seeding");
+  }
+  const encryptionKey = buildKey(encryptionSecret);
+
   const passwordHash = await bcrypt.hash("demo123", 10);
 
   const org = await prisma.organization.upsert({
@@ -26,17 +56,22 @@ async function main() {
     },
   });
 
+  const rawConnectionString =
+    process.env.SEED_DEMO_CONNECTION_STRING ??
+    "postgresql://copilot:copilot@localhost:5432/copilot_app?schema=public";
+
   const conn = await prisma.databaseConnection.upsert({
     where: { id: "seed-conn-local-app-db" },
-    update: { databaseType: ExternalDbProvider.postgres },
+    update: {
+      databaseType: ExternalDbProvider.postgres,
+      connectionString: encryptValue(encryptionKey, rawConnectionString),
+    },
     create: {
       id: "seed-conn-local-app-db",
       organizationId: org.id,
       name: "Local app PostgreSQL (Docker)",
       databaseType: ExternalDbProvider.postgres,
-      connectionString:
-        process.env.SEED_DEMO_CONNECTION_STRING ??
-        "postgresql://copilot:copilot@localhost:5432/copilot_app?schema=public",
+      connectionString: encryptValue(encryptionKey, rawConnectionString),
     },
   });
 
@@ -62,12 +97,10 @@ async function main() {
   });
 
   console.log("Seed complete. Login: demo@example.com / demo123");
+  await prisma.$disconnect();
 }
 
-main()
-  .then(() => prisma.$disconnect())
-  .catch((e) => {
-    console.error(e);
-    prisma.$disconnect();
-    process.exit(1);
-  });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

@@ -37,15 +37,16 @@ Monorepo for a manager-facing analytics copilot: **Next.js 15** (App Router) + *
    Copy `apps/api/.env.example` to `apps/api/.env` and set at least:
 
    - `DATABASE_URL` — default in example matches Docker Compose (`copilot` / `copilot` / `copilot_app`)
-   - `JWT_SECRET` — long random string
+   - `JWT_SECRET` — at least 32 characters
+   - `CREDENTIAL_ENCRYPTION_KEY` — at least 32 characters (encrypts external DB credentials at rest)
+   - `CORS_ORIGIN` — web origin(s), comma-separated (required in production)
 
 4. **Migrate and seed the app database**
 
    ```bash
-   cd apps/api
-   npx prisma migrate deploy
-   npx prisma db seed
-   cd ../..
+   npm run db:migrate:deploy
+   npm run db:encrypt-credentials   # if upgrading existing plaintext credentials
+   npm run db:seed
    ```
 
    Seed creates:
@@ -72,7 +73,7 @@ Monorepo for a manager-facing analytics copilot: **Next.js 15** (App Router) + *
 
 ## API modules (backend)
 
-- **Auth** — `POST /auth/register`, `POST /auth/login` (JWT bearer for all other routes)
+- **Auth** — `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh` (15m access JWT + 7d refresh token)
 - **Database connections** — `GET/POST /database-connections`, `GET /database-connections/:id`, `POST /database-connections/:id/test`. `POST` body includes `type`: `postgres` \| `mysql` plus host/port/database/username/password/ssl; set `dryRun: true` to test only (no save). Runtime access uses **`DatabaseAdapterFactory`** + per-dialect adapters (`PostgresAdapter`, `MysqlAdapter`) — add engines by extending `ExternalDbProvider` in Prisma and registering a new adapter class.
 - **Connections (legacy)** — `GET/POST /connections` with a single `connectionString` (still supported for seeds / older clients)
 - **Schema** — `POST /schema/connections/:id/refresh`, `GET .../latest` (cached `DatabaseSchema` rows)
@@ -81,15 +82,21 @@ Monorepo for a manager-facing analytics copilot: **Next.js 15** (App Router) + *
 - **Dashboards** — `GET/POST /dashboards`, `GET /dashboards/:id`, `POST /dashboards/:id/cards`
 - **Audit** — `AuditLog` writes from services (login, connection, schema refresh, execute, save query, dashboard card)
 
-## Security notes (MVP)
+## Security notes
 
-- Query execution wraps user SQL as `SELECT * FROM (<user sql>) AS _q LIMIT 501` and rejects non–`SELECT`/`WITH` statements via `assertReadOnlySql` in `@analytics-copilot/shared`. **This is not a substitute for a full SQL parser** — see TODO in shared package.
-- External DB passwords are stored in plaintext in the `DatabaseConnection.password` column for the MVP; adapters build driver config internally (**TODO**: KMS / vault). Legacy PostgreSQL `connectionString`-only rows remain supported (`databaseType` defaults to `postgres`).
-- JWT is stored in `localStorage` on the web app (**TODO**: httpOnly cookies + CSRF strategy).
+- Query execution validates SQL with a dialect-aware parser (`node-sql-parser`) and enforces row caps via AST-level `LIMIT` injection — not string wrapping.
+- External DB credentials are encrypted at rest (AES-256-GCM) using `CREDENTIAL_ENCRYPTION_KEY`.
+- JWT access tokens expire in 15 minutes; refresh via `POST /auth/refresh`. Tokens are stored in `localStorage` on the web app (**TODO**: httpOnly cookies + CSRF strategy).
+
+## Production deployment
+
+- `GET /health` — API health check
+- Docker: `docker compose build` then `docker compose up -d` (Postgres + API + web)
+- CI: `.github/workflows/ci.yml` runs build, migrate deploy, and lint
 
 ## Redis
 
-Redis is started by Compose for future caching, rate limits, or BullMQ-style jobs. The API does not require it yet; `REDIS_URL` is optional.
+Redis is not required by the API. Compose no longer starts Redis by default in the production-oriented stack.
 
 ## Scripts (root)
 
@@ -99,9 +106,12 @@ Redis is started by Compose for future caching, rate limits, or BullMQ-style job
 | `npm run dev:api` / `npm run dev:web` | Single app |
 | `npm run build` | Build shared, API, web |
 | `npm run db:migrate` | `prisma migrate dev` in `apps/api` |
+| `npm run db:migrate:deploy` | `prisma migrate deploy` in `apps/api` |
+| `npm run db:encrypt-credentials` | Encrypt legacy plaintext connection credentials |
+| `npm run start:prod` | Run API + web in production mode locally |
 | `npm run db:seed` | Prisma seed |
 
 ## Extension points
 
 - **LLM**: Replace the body of `QueryService.askQuestion` in `apps/api` and keep validation + read-only execution.
-- **Stricter SQL**: Swap `assertReadOnlySql` for `pg-query-parser` or a managed “semantic layer” API.
+- **Stricter SQL**: Extend parser rules in `packages/shared/src/utils/sql-readonly.ts` or add dialect-specific allowlists.

@@ -1,10 +1,12 @@
-import { Injectable, ConflictException } from "@nestjs/common";
+import { Injectable, ConflictException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { AuditAction } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { RegisterDto } from "./dto/register.dto";
+
+type TokenUser = { userId: string; email: string; organizationId: string };
 
 @Injectable()
 export class AuthService {
@@ -34,8 +36,8 @@ export class AuthService {
     await this.audit.log({
       organizationId: org.id,
       userId: user.id,
-      action: AuditAction.LOGIN,
-      metadata: { event: "register" },
+      action: AuditAction.REGISTER,
+      metadata: { email: user.email },
     });
     return this.issueTokens(user.id, user.email, user.organizationId);
   }
@@ -52,7 +54,7 @@ export class AuthService {
     return { userId: user.id, email: user.email, organizationId: user.organizationId };
   }
 
-  async login(user: { userId: string; email: string; organizationId: string }) {
+  async login(user: TokenUser) {
     await this.audit.log({
       organizationId: user.organizationId,
       userId: user.userId,
@@ -61,10 +63,31 @@ export class AuthService {
     return this.issueTokens(user.userId, user.email, user.organizationId);
   }
 
+  async refresh(refreshToken: string) {
+    let payload: { sub?: string; type?: string };
+    try {
+      payload = this.jwt.verify(refreshToken);
+    } catch {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+    if (payload.type !== "refresh" || !payload.sub) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+
+    return this.issueTokens(user.id, user.email, user.organizationId);
+  }
+
   private issueTokens(userId: string, email: string, organizationId: string) {
-    const payload = { sub: userId, email, organizationId };
+    const accessToken = this.jwt.sign({ sub: userId, email, organizationId, type: "access" }, { expiresIn: "15m" });
+    const refreshToken = this.jwt.sign({ sub: userId, type: "refresh" }, { expiresIn: "7d" });
     return {
-      accessToken: this.jwt.sign(payload),
+      accessToken,
+      refreshToken,
       user: { id: userId, email, organizationId },
     };
   }

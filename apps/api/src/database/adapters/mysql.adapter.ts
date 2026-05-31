@@ -1,7 +1,7 @@
 import { BadRequestException, type Logger } from "@nestjs/common";
 import type { FieldPacket, RowDataPacket } from "mysql2";
 import { createConnection, type Connection } from "mysql2/promise";
-import { assertReadOnlySql } from "@analytics-copilot/shared";
+import { prepareReadOnlyQuery } from "@analytics-copilot/shared";
 import type { ConnectionCredentials } from "../connection-credentials.types";
 import { mapConnectionErrorMessage } from "../connection-error.mapper";
 import { SCHEMA_PREVIEW_ROW_LIMIT } from "../schema-preview.constants";
@@ -34,6 +34,7 @@ export class MysqlAdapter implements DatabaseAdapter {
   constructor(private readonly creds: ConnectionCredentials) {}
 
   private async open(): Promise<Connection> {
+    const rejectUnauthorized = process.env.MYSQL_SSL_REJECT_UNAUTHORIZED !== "false";
     return createConnection({
       host: this.creds.host,
       port: this.creds.port,
@@ -41,7 +42,7 @@ export class MysqlAdapter implements DatabaseAdapter {
       password: this.creds.password,
       database: this.creds.database,
       connectTimeout: 10_000,
-      ssl: this.creds.ssl ? { rejectUnauthorized: false } : undefined,
+      ssl: this.creds.ssl ? { rejectUnauthorized } : undefined,
     });
   }
 
@@ -105,16 +106,16 @@ export class MysqlAdapter implements DatabaseAdapter {
   }
 
   async executeQuery(sql: string): Promise<AdapterExecuteResult> {
-    try {
-      assertReadOnlySql(sql);
-    } catch (e) {
-      throw new BadRequestException(e instanceof Error ? e.message : "Invalid SQL");
-    }
     const maxRows = DEFAULT_ADAPTER_QUERY_ROW_CAP;
+    const prepared = prepareReadOnlyQuery(sql, "mysql", maxRows);
+    if (!prepared.ok) {
+      throw new BadRequestException(prepared.error);
+    }
+
     const conn = await this.open();
     try {
-      const wrapped = `SELECT * FROM (${sql}) AS _q LIMIT ${maxRows + 1}`;
-      const [rows, fields] = await conn.query<RowDataPacket[]>(wrapped);
+      await conn.query("SET SESSION MAX_EXECUTION_TIME = 60000");
+      const [rows, fields] = await conn.query<RowDataPacket[]>(prepared.normalizedSql);
       const rowArr = rows as Record<string, unknown>[];
       const truncated = rowArr.length > maxRows;
       const sliced = rowArr.slice(0, maxRows);

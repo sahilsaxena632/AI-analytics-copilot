@@ -10,6 +10,7 @@ export class ExecuteQueryDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(65536)
   sql!: string;
 
   @IsOptional()

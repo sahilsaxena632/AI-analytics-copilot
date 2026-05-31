@@ -475,7 +475,7 @@ export default function SettingsPage() {
                   />
                   <SwitchRow
                     label="Auto-run after generation"
-                    description="Saved as a preference; execution remains manually controlled until wired in."
+                    description="When enabled, generated SQL runs automatically on the Ask page."
                     checked={draft.workspace.autoRunGeneratedSql}
                     onCheckedChange={(checked) => setWorkspace("autoRunGeneratedSql", checked)}
                   />
@@ -561,7 +561,7 @@ export default function SettingsPage() {
               <SectionCard
                 id="notifications"
                 title="Notifications"
-                description="Choose which product moments should create alerts."
+                description="Preferences are saved for future delivery channels. Delivery is not enabled yet."
                 action={
                   <SaveButton
                     saving={saving === "workspace"}
@@ -570,6 +570,9 @@ export default function SettingsPage() {
                   />
                 }
               >
+                <p className="mb-3 rounded-lg border border-dashed border-border/70 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+                  Notification delivery is coming soon. These toggles store your preferences only.
+                </p>
                 <div className="grid gap-3 md:grid-cols-2">
                   <SwitchRow
                     label="Anomaly alerts"

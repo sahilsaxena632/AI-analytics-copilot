@@ -42,10 +42,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
           ? exception.message
           : "Internal server error";
 
-    const messageText = flattenMessage(typeof rawMessage === "string" ? rawMessage : rawMessage);
+    const messageText =
+      status >= 500
+        ? "An unexpected error occurred. Please try again later."
+        : flattenMessage(typeof rawMessage === "string" ? rawMessage : rawMessage);
 
     const body =
-      typeof rawMessage === "string"
+      typeof rawMessage === "string" || status >= 500
         ? { statusCode: status, message: messageText, path: request.url }
         : {
             ...(rawMessage as object),

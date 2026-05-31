@@ -13,11 +13,16 @@
     "dev:api": "npm run dev --workspace=@analytics-copilot/api",
     "dev:web": "npm run dev --workspace=@analytics-copilot/web",
     "build": "npm run build --workspace=@analytics-copilot/shared && npm run build --workspace=@analytics-copilot/api && npm run build --workspace=@analytics-copilot/web",
+    "start:prod": "concurrently -n api,web -c blue,green \"npm run start:prod --workspace=@analytics-copilot/api\" \"npm run start --workspace=@analytics-copilot/web\"",
+    "typecheck": "npm run typecheck --workspace=@analytics-copilot/web",
     "db:generate": "npm run prisma:generate --workspace=@analytics-copilot/api",
     "db:migrate": "npm run prisma:migrate --workspace=@analytics-copilot/api",
+    "db:migrate:deploy": "npm run prisma:migrate:deploy --workspace=@analytics-copilot/api",
+    "db:encrypt-credentials": "npm run prisma:encrypt-credentials --workspace=@analytics-copilot/api",
     "db:seed": "npm run prisma:seed --workspace=@analytics-copilot/api",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build"
   },
   "engines": {
     "node": ">=20"

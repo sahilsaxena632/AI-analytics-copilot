@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import type { QueryExecuteResultDto } from "@analytics-copilot/shared";
-import { assertReadOnlySql } from "@analytics-copilot/shared";
 import { AuditAction } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
@@ -26,13 +25,9 @@ export class QueryExecutionService {
     savedQueryId?: string | null,
     naturalLanguageQuestion?: string | null,
   ): Promise<QueryExecuteResultDto> {
-    let normalized = sql.trim().replace(/;+\s*$/g, "").trim();
-
-    try {
-      assertReadOnlySql(normalized);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Invalid SQL";
-      throw new BadRequestException(msg);
+    const normalized = sql.trim().replace(/;+\s*$/g, "").trim();
+    if (!normalized) {
+      throw new BadRequestException("Add a SQL query before running.");
     }
 
     if (savedQueryId) {
@@ -61,6 +56,7 @@ export class QueryExecutionService {
 
       await this.prisma.queryRun.create({
         data: {
+          organizationId,
           connectionId,
           savedQueryId: savedQueryId || null,
           sqlText: sql,
@@ -99,6 +95,7 @@ export class QueryExecutionService {
       this.logger.warn(`Query execution failed connectionId=${connectionId} durationMs=${durationMs}: ${message}`);
       await this.prisma.queryRun.create({
         data: {
+          organizationId,
           connectionId,
           savedQueryId: savedQueryId || null,
           sqlText: sql,

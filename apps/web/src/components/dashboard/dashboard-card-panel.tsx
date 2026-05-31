@@ -257,7 +257,7 @@ export function DashboardCardPanel({
 
           {chartOpen && result ? (
             <div className="dashboard-card-no-drag h-[320px] min-h-[320px] w-full shrink-0" key={`chart-${card.id}-${chartReflowKey}`}>
-              <QueryAutoChart result={result} />
+              <QueryAutoChart result={result} preferredChartType={card.chartType as "bar" | "line" | "table"} />
             </div>
           ) : null}
         </CardContent>

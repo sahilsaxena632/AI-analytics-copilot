@@ -1,6 +1,6 @@
 import { BadRequestException, type Logger } from "@nestjs/common";
 import { Client } from "pg";
-import { assertReadOnlySql } from "@analytics-copilot/shared";
+import { prepareReadOnlyQuery } from "@analytics-copilot/shared";
 import { buildPostgresConnectionUri } from "../uri/postgres-uri.builder";
 import type { ConnectionCredentials } from "../connection-credentials.types";
 import { mapConnectionErrorMessage } from "../connection-error.mapper";
@@ -126,21 +126,20 @@ export class PostgresAdapter implements DatabaseAdapter {
   }
 
   async executeQuery(sql: string): Promise<AdapterExecuteResult> {
-    try {
-      assertReadOnlySql(sql);
-    } catch (e) {
-      throw new BadRequestException(e instanceof Error ? e.message : "Invalid SQL");
-    }
     const maxRows = DEFAULT_ADAPTER_QUERY_ROW_CAP;
+    const prepared = prepareReadOnlyQuery(sql, "postgres", maxRows);
+    if (!prepared.ok) {
+      throw new BadRequestException(prepared.error);
+    }
+
     const client = new Client({
       connectionString: this.connectionString(),
       statement_timeout: 60_000,
     });
     await client.connect();
     try {
-      const wrapped = `SELECT * FROM (${sql}) AS _q LIMIT ${maxRows + 1}`;
-      const res = await client.query(wrapped);
-      const truncated = res.rowCount != null && res.rowCount > maxRows;
+      const res = await client.query(prepared.normalizedSql);
+      const truncated = res.rows.length > maxRows;
       const rows = res.rows.slice(0, maxRows).map((r) => ({ ...r }));
       const columns = res.fields.map((f) => f.name);
       return { columns, rows, rowCount: rows.length, truncated };

@@ -1,4 +1,4 @@
-import { IsIn, IsNotEmpty, IsString } from "class-validator";
+import { IsIn, IsNotEmpty, IsString, MaxLength } from "class-validator";
 import { IsPrismaClientId } from "../../common/validators/is-prisma-client-id.decorator";
 
 export class CreateDashboardCardDto {
@@ -14,5 +14,6 @@ export class CreateDashboardCardDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(65536)
   sqlText!: string;
 }

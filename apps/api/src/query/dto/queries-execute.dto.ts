@@ -7,6 +7,7 @@ export class QueriesExecuteDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(65536)
   sql!: string;
 
   @IsOptionalPrismaClientId()

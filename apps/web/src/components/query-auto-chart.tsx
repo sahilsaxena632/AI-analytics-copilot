@@ -68,8 +68,17 @@ function chartSubtitle(plan: ChartPlan): string {
   return "";
 }
 
-export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | null }) {
+export function QueryAutoChart({
+  result,
+  preferredChartType,
+}: {
+  result: QueryExecuteResultDto | null;
+  preferredChartType?: "bar" | "line" | "table";
+}) {
   if (!result) {
+    return null;
+  }
+  if (preferredChartType === "table") {
     return null;
   }
   if (result.rows.length === 0) {
@@ -83,7 +92,18 @@ export function QueryAutoChart({ result }: { result: QueryExecuteResultDto | nul
     );
   }
 
-  const plan = inferChartPlan(result);
+  let plan = inferChartPlan(result);
+
+  if (preferredChartType === "bar" && plan.xKey && plan.yKey) {
+    plan = { ...plan, kind: "bar", confidence: "high", reason: "Using the saved bar chart preference for this card." };
+  } else if (preferredChartType === "line" && plan.xKey && plan.yKey) {
+    plan = {
+      ...plan,
+      kind: plan.kind === "line_multi" ? "line_multi" : "line",
+      confidence: "high",
+      reason: "Using the saved line chart preference for this card.",
+    };
+  }
 
   if (plan.kind === "none" || (plan.confidence === "low" && plan.kind !== "kpi")) {
     return (

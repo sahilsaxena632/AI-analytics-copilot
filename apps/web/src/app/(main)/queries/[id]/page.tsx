@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { SavedQueryDto } from "@analytics-copilot/shared";
 import { AppHeader } from "@/components/app-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/loading-state";
 import { ErrorBanner } from "@/components/error-banner";
 import { PageMain } from "@/components/page-main";
@@ -14,6 +15,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function QueryDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = String(params.id ?? "");
   const { token } = useAuth();
   const [q, setQ] = useState<SavedQueryDto | null>(null);
@@ -31,17 +33,43 @@ export default function QueryDetailPage() {
       .finally(() => setLoading(false));
   }, [token, id]);
 
+  function runInAsk() {
+    if (!q) {
+      return;
+    }
+    const params = new URLSearchParams();
+    params.set("connectionId", q.connectionId);
+    params.set("sql", q.sqlText);
+    if (q.naturalLanguageQuestion) {
+      params.set("question", q.naturalLanguageQuestion);
+    }
+    if (q.id) {
+      params.set("savedQueryId", q.id);
+    }
+    router.push(`/app/ask?${params.toString()}`);
+  }
+
   return (
     <>
-      <AppHeader title={q?.title ?? "Saved query"} subtitle="Review the question and SQL, then run again from Ask query." />
+      <AppHeader title={q?.title ?? "Saved query"} subtitle="Review the question and SQL, then run it in Ask query." />
       <PageMain gapClassName="gap-6">
         {error ? <ErrorBanner message={error} /> : null}
         {loading ? <LoadingState label="Loading saved query…" /> : null}
         {q ? (
           <Card>
-            <CardHeader>
-              <CardTitle>{q.title}</CardTitle>
-              <CardDescription>Uses one of your connected databases. Run from Ask query to pick the connection and refresh results.</CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <div>
+                <CardTitle>{q.title}</CardTitle>
+                <CardDescription>Run this query again with the saved SQL and connection.</CardDescription>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button type="button" onClick={runInAsk}>
+                  Run query
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => router.push("/queries")}>
+                  Back to list
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {q.naturalLanguageQuestion ? (

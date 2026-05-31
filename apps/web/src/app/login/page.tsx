@@ -24,8 +24,8 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const next = safeNextPath(searchParams.get("next"));
 
-  const [email, setEmail] = useState("demo@example.com");
-  const [password, setPassword] = useState("demo123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -48,14 +48,15 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<{ accessToken: string; user: { id: string; email: string; organizationId: string } }>(
-        "/auth/login",
-        {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        },
-      );
-      setSession(res.accessToken, res.user);
+      const res = await apiFetch<{
+        accessToken: string;
+        refreshToken: string;
+        user: { id: string; email: string; organizationId: string };
+      }>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      setSession(res.accessToken, res.refreshToken, res.user);
       router.replace(next);
     } catch (err) {
       setError(friendlyApiMessage(err, "Sign-in didn’t work. Check your email and password."));
@@ -69,7 +70,7 @@ function LoginForm() {
       <Card className="w-full max-w-md bg-card/95 shadow-lg shadow-black/15">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
-          <CardDescription>Use your workspace account. Demo credentials work after the database is seeded.</CardDescription>
+          <CardDescription>Use your workspace account to continue.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={onSubmit}>
@@ -97,7 +98,6 @@ function LoginForm() {
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">Demo: demo@example.com / demo123 (after seed)</p>
         </CardContent>
       </Card>
     </div>

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/commo
 import { AuditAction, ExternalDbProvider } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
+import { CredentialEncryptionService } from "../database/credential-encryption.service";
 import { CreateConnectionDto } from "./dto/create-connection.dto";
 
 @Injectable()
@@ -9,6 +10,7 @@ export class ConnectionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly credentialEncryption: CredentialEncryptionService,
   ) {}
 
   async list(organizationId: string) {
@@ -42,7 +44,7 @@ export class ConnectionsService {
         organizationId,
         name: dto.name,
         databaseType: ExternalDbProvider.postgres,
-        connectionString: dto.connectionString,
+        connectionString: this.credentialEncryption.encrypt(dto.connectionString) ?? "",
         isActive: dto.isActive ?? true,
       },
     });

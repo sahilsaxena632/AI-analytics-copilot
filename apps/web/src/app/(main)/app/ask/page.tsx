@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   GenerateSqlRequestDto,
   GenerateSqlResponseDto,
@@ -29,7 +30,11 @@ import { SaveQueryModal, AddToDashboardModal } from "@/components/query-workspac
 import { inferDashboardCardChartType } from "@/lib/query-result-heuristics";
 
 type Connection = { id: string; name: string; isActive: boolean };
-type WorkspaceQueryPreferences = { defaultDatabaseConnectionId: string | null };
+type WorkspaceQueryPreferences = {
+  defaultDatabaseConnectionId: string | null;
+  autoRunGeneratedSql: boolean;
+  defaultChartType: string;
+};
 
 const EXAMPLES = [
   "Show total revenue by month",
@@ -40,6 +45,7 @@ const EXAMPLES = [
 
 export default function AppAskPage() {
   const { token } = useAuth();
+  const searchParams = useSearchParams();
   const [connections, setConnections] = useState<Connection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [connectionsError, setConnectionsError] = useState<string | null>(null);
@@ -70,6 +76,7 @@ export default function AppAskPage() {
     const s = generateRes.confidenceScore;
     return typeof s === "number" && s < 0.55;
   }, [generateRes]);
+  const [autoRunGeneratedSql, setAutoRunGeneratedSql] = useState(false);
   const canGenerate = !busy && !!question.trim();
   const canRun = !busy && !!sql.trim();
 
@@ -85,6 +92,7 @@ export default function AppAskPage() {
         apiFetch<WorkspaceQueryPreferences>("/settings/workspace", { token }),
       ]);
       setConnections(rows);
+      setAutoRunGeneratedSql(preferences.autoRunGeneratedSql);
       setConnectionId((prev) => {
         if (prev && rows.some((r) => r.id === prev && r.isActive)) {
           return prev;
@@ -104,12 +112,6 @@ export default function AppAskPage() {
     }
   }, [token]);
 
-  useEffect(() => {
-    if (token) {
-      void loadConnections();
-    }
-  }, [token, loadConnections]);
-
   const loadSchema = useCallback(async () => {
     if (!token || !connectionId) {
       setSchema(null);
@@ -127,6 +129,31 @@ export default function AppAskPage() {
       setSchemaLoading(false);
     }
   }, [token, connectionId]);
+
+  useEffect(() => {
+    const nextConnectionId = searchParams.get("connectionId");
+    const nextSql = searchParams.get("sql");
+    const nextQuestion = searchParams.get("question");
+    const nextSavedQueryId = searchParams.get("savedQueryId");
+    if (nextConnectionId) {
+      setConnectionId(nextConnectionId);
+    }
+    if (nextSql) {
+      setSql(nextSql);
+    }
+    if (nextQuestion) {
+      setQuestion(nextQuestion);
+    }
+    if (nextSavedQueryId) {
+      setSavedQueryId(nextSavedQueryId);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (token) {
+      void loadConnections();
+    }
+  }, [token, loadConnections]);
 
   useEffect(() => {
     if (token && connectionId) {
@@ -164,6 +191,21 @@ export default function AppAskPage() {
       setGenerateRes(res);
       if (res.status === "ok" && res.generatedSql) {
         setSql(res.generatedSql);
+        if (autoRunGeneratedSql) {
+          const body: Record<string, string | undefined> = {
+            databaseConnectionId: connectionId,
+            sql: res.generatedSql,
+          };
+          if (question.trim()) {
+            body.naturalLanguageQuestion = question.trim();
+          }
+          const runRes = await apiFetch<QueryExecuteResultDto>("/queries/execute", {
+            method: "POST",
+            token,
+            body: JSON.stringify(body),
+          });
+          setResult(runRes);
+        }
       } else {
         setSql("");
       }

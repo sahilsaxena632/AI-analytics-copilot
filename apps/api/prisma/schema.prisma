@@ -9,6 +9,7 @@ datasource db {
 
 enum AuditAction {
   LOGIN
+  REGISTER
   CONNECTION_CREATED
   SCHEMA_REFRESHED
   QUERY_EXECUTED
@@ -48,6 +49,8 @@ model User {
 
   auditLogs AuditLog[]
   settings  UserSettings?
+
+  @@index([organizationId])
 }
 
 model UserSettings {
@@ -101,7 +104,7 @@ model DatabaseConnection {
   port             Int?
   databaseName     String?
   username         String?
-  /// MVP plaintext; replace via `ConnectionCredentialsStore` pattern — never expose in API responses or logs.
+  /// Encrypted at rest (AES-256-GCM). Never expose in API responses or logs.
   password         String?
   ssl              Boolean  @default(false)
   isActive         Boolean  @default(true)
@@ -151,6 +154,7 @@ model SavedQuery {
 
 model QueryRun {
   id           String    @id @default(cuid())
+  organizationId String?
   savedQueryId String?
   savedQuery   SavedQuery? @relation(fields: [savedQueryId], references: [id], onDelete: SetNull)
   connectionId String
@@ -165,6 +169,8 @@ model QueryRun {
   createdAt    DateTime  @default(now())
 
   @@index([connectionId])
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 model Dashboard {
@@ -202,6 +208,7 @@ model DashboardCard {
   updatedAt    DateTime @updatedAt
 
   @@index([dashboardId])
+  @@index([connectionId])
 }
 
 model AuditLog {
@@ -217,4 +224,5 @@ model AuditLog {
   createdAt      DateTime    @default(now())
 
   @@index([organizationId])
+  @@index([organizationId, createdAt])
 }

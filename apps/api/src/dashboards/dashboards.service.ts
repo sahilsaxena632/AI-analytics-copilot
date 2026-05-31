@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { tryValidateReadOnlySql } from "@analytics-copilot/shared";
 import { AuditAction } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
@@ -238,6 +239,11 @@ export class DashboardsService {
       throw new NotFoundException("Dashboard not found");
     }
     await this.connections.getById(dto.connectionId, organizationId);
+
+    const sqlCheck = tryValidateReadOnlySql(dto.sqlText);
+    if (!sqlCheck.ok) {
+      throw new BadRequestException(sqlCheck.error);
+    }
 
     const slot = await this.nextDefaultLayoutSlot(dashboardId);
 

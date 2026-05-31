@@ -4,6 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { CreateDatabaseConnectionDto } from "./dto/create-database-connection.dto";
 import { DatabaseAdapterFactory } from "../database/database-adapter.factory";
+import { CredentialEncryptionService } from "../database/credential-encryption.service";
 import type { ConnectionCredentials } from "../database/connection-credentials.types";
 
 export type SafeDatabaseConnection = {
@@ -28,6 +29,7 @@ export class DatabaseConnectionsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly adapterFactory: DatabaseAdapterFactory,
+    private readonly credentialEncryption: CredentialEncryptionService,
   ) {}
 
   async create(organizationId: string, userId: string, dto: CreateDatabaseConnectionDto) {
@@ -66,7 +68,7 @@ export class DatabaseConnectionsService {
         port: dto.port,
         databaseName: dto.database,
         username: dto.username,
-        password: dto.password,
+        password: this.credentialEncryption.encrypt(dto.password),
         ssl,
         isActive: true,
       },

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: copilot
+          POSTGRES_PASSWORD: copilot
+          POSTGRES_DB: copilot_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U copilot -d copilot_app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://copilot:copilot@localhost:5432/copilot_app?schema=public
+      JWT_SECRET: ci-jwt-secret-with-at-least-thirty-two-characters
+      CREDENTIAL_ENCRYPTION_KEY: ci-credential-encryption-key-at-least-32-chars
+      CORS_ORIGIN: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=@analytics-copilot/shared
+      - run: npm run prisma:generate --workspace=@analytics-copilot/api
+      - run: npm run prisma:migrate:deploy --workspace=@analytics-copilot/api
+      - run: npm run build --workspace=@analytics-copilot/api
+      - run: npm run build --workspace=@analytics-copilot/web
+      - run: npm run lint --workspace=@analytics-copilot/web
