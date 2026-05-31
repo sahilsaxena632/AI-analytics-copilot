@@ -2,101 +2,164 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme system
+ * ------------
+ * Two independent axes, both set on <html>:
+ *   - data-mode:   "dark" | "light"   -> neutral surface palette + status colors
+ *   - data-accent: "blue" | "emerald" | "violet" | "orange" | "rose" | "slate"
+ *                                      -> brand/primary, accent, ring, glow, chart hues
+ *
+ * To add a new accent: append one [data-accent="..."] block below.
+ * To add a new mode/surface palette: append one [data-mode="..."] block.
+ * Defaults in :root mirror data-mode="dark" + data-accent="blue" for SSR.
+ */
 :root {
-  --background: 222 47% 6%;
-  --foreground: 210 40% 98%;
-  --card: 222 40% 10%;
-  --muted: 215 20% 65%;
-  --muted-foreground: 215 16% 72%;
-  --border: 217 19% 20%;
-  --primary: 217 91% 60%;
-  --accent: 262 83% 58%;
-  --ring: 217 91% 60%;
-  --input: 217 19% 24%;
   --radius: 0.65rem;
-  --success: 152 62% 47%;
-  --warning: 38 92% 56%;
-  --danger: 0 84% 62%;
-  --chart-1: 217 91% 62%;
-  --chart-2: 262 83% 66%;
-  --chart-3: 167 76% 46%;
-  --chart-4: 38 92% 58%;
-  --chart-5: 330 82% 64%;
-  --backdrop-glow: 217 91% 60%;
-  --backdrop-glow-2: 262 83% 58%;
-}
 
-[data-theme="dark"] {
+  /* mode: dark (default) */
   --background: 222 47% 6%;
   --foreground: 210 40% 98%;
   --card: 222 40% 10%;
   --muted: 215 20% 65%;
   --muted-foreground: 215 16% 72%;
   --border: 217 19% 20%;
-  --primary: 217 91% 60%;
-  --accent: 262 83% 58%;
-  --ring: 217 91% 60%;
   --input: 217 19% 24%;
   --success: 152 62% 47%;
   --warning: 38 92% 56%;
   --danger: 0 84% 62%;
-  --chart-1: 217 91% 62%;
-  --chart-2: 262 83% 66%;
   --chart-3: 167 76% 46%;
   --chart-4: 38 92% 58%;
   --chart-5: 330 82% 64%;
+
+  /* accent: blue (default) */
+  --primary: 217 91% 60%;
+  --accent: 262 83% 63%;
+  --ring: 217 91% 60%;
+  --chart-1: 217 91% 62%;
+  --chart-2: 262 83% 66%;
   --backdrop-glow: 217 91% 60%;
-  --backdrop-glow-2: 262 83% 58%;
+  --backdrop-glow-2: 262 83% 63%;
 }
 
-[data-theme="light"] {
+/* ---------- Mode: surface palettes + status ---------- */
+[data-mode="dark"] {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 40% 10%;
+  --muted: 215 20% 65%;
+  --muted-foreground: 215 16% 72%;
+  --border: 217 19% 20%;
+  --input: 217 19% 24%;
+  --success: 152 62% 47%;
+  --warning: 38 92% 56%;
+  --danger: 0 84% 62%;
+  --chart-3: 167 76% 46%;
+  --chart-4: 38 92% 58%;
+  --chart-5: 330 82% 64%;
+}
+
+[data-mode="light"] {
   --background: 210 40% 98%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --muted: 215 16% 42%;
   --muted-foreground: 215 16% 35%;
   --border: 214 32% 88%;
-  --primary: 221 83% 53%;
-  --accent: 262 74% 58%;
-  --ring: 221 83% 53%;
   --input: 214 32% 84%;
-  --success: 152 56% 40%;
-  --warning: 32 90% 46%;
+  --success: 152 56% 38%;
+  --warning: 32 90% 44%;
   --danger: 0 72% 51%;
-  --chart-1: 221 83% 53%;
-  --chart-2: 262 74% 58%;
   --chart-3: 167 72% 38%;
   --chart-4: 32 90% 50%;
   --chart-5: 330 78% 56%;
-  --backdrop-glow: 221 83% 60%;
-  --backdrop-glow-2: 262 74% 62%;
 }
 
-[data-theme="green"] {
-  --background: 146 40% 8%;
-  --foreground: 140 40% 95%;
-  --card: 146 35% 12%;
-  --muted: 145 18% 70%;
-  --muted-foreground: 145 18% 76%;
-  --border: 148 20% 24%;
-  --primary: 147 68% 44%;
-  --accent: 167 80% 40%;
-  --ring: 147 68% 44%;
-  --input: 148 20% 30%;
-  --success: 152 64% 46%;
-  --warning: 44 90% 56%;
-  --danger: 0 78% 60%;
-  --chart-1: 147 68% 50%;
-  --chart-2: 167 80% 46%;
-  --chart-3: 190 72% 50%;
-  --chart-4: 44 90% 58%;
-  --chart-5: 96 60% 56%;
-  --backdrop-glow: 147 68% 44%;
-  --backdrop-glow-2: 167 80% 40%;
+/* ---------- Accent: brand hues (work on both modes) ---------- */
+[data-accent="blue"] {
+  --primary: 217 91% 60%;
+  --accent: 262 83% 63%;
+  --ring: 217 91% 60%;
+  --chart-1: 217 91% 62%;
+  --chart-2: 262 83% 66%;
+  --backdrop-glow: 217 91% 60%;
+  --backdrop-glow-2: 262 83% 63%;
+}
+
+[data-accent="emerald"] {
+  --primary: 152 64% 44%;
+  --accent: 167 76% 44%;
+  --ring: 152 64% 44%;
+  --chart-1: 152 64% 48%;
+  --chart-2: 167 76% 46%;
+  --backdrop-glow: 152 64% 44%;
+  --backdrop-glow-2: 167 76% 44%;
+}
+
+[data-accent="violet"] {
+  --primary: 262 83% 63%;
+  --accent: 292 80% 66%;
+  --ring: 262 83% 63%;
+  --chart-1: 262 83% 66%;
+  --chart-2: 292 80% 68%;
+  --backdrop-glow: 262 83% 63%;
+  --backdrop-glow-2: 292 80% 66%;
+}
+
+[data-accent="orange"] {
+  --primary: 25 95% 56%;
+  --accent: 41 96% 55%;
+  --ring: 25 95% 56%;
+  --chart-1: 25 95% 58%;
+  --chart-2: 41 96% 58%;
+  --backdrop-glow: 25 95% 56%;
+  --backdrop-glow-2: 41 96% 55%;
+}
+
+[data-accent="rose"] {
+  --primary: 347 82% 60%;
+  --accent: 330 82% 64%;
+  --ring: 347 82% 60%;
+  --chart-1: 347 82% 62%;
+  --chart-2: 330 82% 66%;
+  --backdrop-glow: 347 82% 60%;
+  --backdrop-glow-2: 330 82% 64%;
+}
+
+[data-accent="slate"] {
+  --primary: 215 28% 55%;
+  --accent: 215 20% 65%;
+  --ring: 215 28% 55%;
+  --chart-1: 215 28% 60%;
+  --chart-2: 215 16% 70%;
+  --backdrop-glow: 215 28% 55%;
+  --backdrop-glow-2: 215 20% 65%;
 }
 
 body {
   @apply bg-background text-foreground antialiased;
+}
+
+/*
+ * Smooth, intentional theme switching.
+ * The .theme-transition class is added by ThemeProvider only during a switch,
+ * so transitions never interfere with everyday hover/focus interactions.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition:
+      background-color 320ms ease,
+      border-color 320ms ease,
+      color 320ms ease,
+      fill 320ms ease,
+      stroke 320ms ease,
+      box-shadow 320ms ease,
+      background-image 320ms ease !important;
+    transition-delay: 0ms !important;
+  }
 }
 
 @layer base {

@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { useAuth } from "@/lib/auth-context";
-import { useTheme, type AppTheme } from "@/lib/theme-context";
 
 export function AppHeader({
   title,
@@ -17,7 +17,6 @@ export function AppHeader({
   actions?: ReactNode;
 }) {
   const { user, clearSession } = useAuth();
-  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   const initial = user?.email?.trim()?.charAt(0)?.toUpperCase() || "U";
@@ -32,18 +31,7 @@ export function AppHeader({
       </div>
       <div className="flex shrink-0 items-center gap-2.5">
         {actions}
-        <div className="relative">
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value as AppTheme)}
-            className="h-9 cursor-pointer rounded-lg border border-border/70 bg-card/60 pl-3 pr-8 text-xs font-medium text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Select theme"
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="green">Green</option>
-          </select>
-        </div>
+        <ThemeSwitcher />
         <div className="hidden items-center gap-2.5 rounded-lg border border-border/70 bg-card/60 py-1 pl-1 pr-3 sm:flex">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-gradient text-xs font-semibold text-white">
             {initial}
